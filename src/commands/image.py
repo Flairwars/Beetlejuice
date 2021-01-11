@@ -38,6 +38,7 @@ class ImageEditing(commands.Cog, name='image'):
     async def recolor(self, ctx: object, color: str = 'yellow', strength: float = 100):
         """
         Recolors above image
+        :param ctx:
         :param color:
         :param strength:
         :return Recolored image:
