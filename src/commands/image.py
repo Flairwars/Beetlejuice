@@ -18,9 +18,13 @@ class ImageEditing(commands.Cog, name='image'):
         self.reg = re.compile(r'https?:/.*\.(png|jpg|jpeg|gif|jfif|bmp)')
 
     @staticmethod
-    def imageProcessing(img, color, strength):
+    def ProcessRecolor(img: object, color: tuple, strength: float) -> object:
         """
-        recolors
+        Background Recolor Processing
+        :param img:
+        :param color:
+        :param strength:
+        :return:
         """
         for i in range(0, img.size[0]):  # process all pixels
             for j in range(0, img.size[1]):
@@ -95,7 +99,7 @@ class ImageEditing(commands.Cog, name='image'):
             img = Image.open(io.BytesIO(data))
             img = img.convert('RGBA')  # In case image (e.g. JPG) is in 'RGB' or else mode.
 
-            fn = partial(self.imageProcessing, img, addition_colors[color], strength)
+            fn = partial(self.ProcessRecolor, img, addition_colors[color], strength)
             img = await self.client.loop.run_in_executor(None, fn)
 
             # Send image to discord without saving to file
@@ -109,6 +113,12 @@ class ImageEditing(commands.Cog, name='image'):
 
     @recolor.error
     async def _recolor(self, ctx: object, error: object):
+        """
+        Error output for Recolor
+        :param ctx:
+        :param error:
+        :return:
+        """
         if isinstance(error, commands.CommandInvokeError):
             await ctx.send('`ERROR: invalid args <color> <percentage>`')
         elif isinstance(error, discord.errors.DiscordException):
