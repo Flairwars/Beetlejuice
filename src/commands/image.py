@@ -68,7 +68,7 @@ class ImageEditing(commands.Cog, name='image'):
             if not color.startswith('#'):
                 color ='#'+color
             rgb= ImageColor.getrgb(color)
-            additional_colors[color] = (rgb[0],rgb[1],rgb[2],0)
+            addition_colors[color] = (rgb[0],rgb[1],rgb[2],0)
 
         bot_msg = await ctx.send('`Editing images`')
         async with ctx.typing():
@@ -128,6 +128,7 @@ class ImageEditing(commands.Cog, name='image'):
             await ctx.send('`ERROR: invalid color`')
         else:
             await ctx.send('`ERROR: something went wrong`')
+        print(error)
 
     @commands.command(alieses=['bee'])
     async def beeify(self, ctx):
