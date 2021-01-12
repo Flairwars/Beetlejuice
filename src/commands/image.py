@@ -1,5 +1,5 @@
 from discord.ext import commands
-from PIL import Image
+from PIL import Image, ImageColor
 from functools import partial
 import discord
 import aiohttp
