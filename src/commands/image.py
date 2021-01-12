@@ -65,8 +65,10 @@ class ImageEditing(commands.Cog, name='image'):
             color = addition_colors[color]
 
         if color not in addition_colors:
-            raise discord.errors.DiscordException
-            # What to do when no attachment is sent with the file: Search prev. messages for a file, also for links.
+            if not color.startswith('#'):
+                color ='#'+color
+            rgb= ImageColor.getrgb(color)
+            additional_colors[color] = (rgb[0],rgb[1],rgb[2],0)
 
         bot_msg = await ctx.send('`Editing images`')
         async with ctx.typing():
