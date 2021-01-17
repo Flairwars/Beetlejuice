@@ -58,12 +58,12 @@ class ImageEditing(commands.Cog, name='image'):
         strength /= 100
 
         addition_colors = {
-            'red': (255, -255, -255, 0),
+            'red': (255, 0, 0, 0),
             'orange': (255, 127, 0, 0),
-            'yellow': (255, 255, -255, 0),
-            'green': (-255, 255, -255, 0),
-            'blue': (-255, -255, 255, 0),
-            'purple': (127, -255, 127, 0),
+            'yellow': (255, 255, 0, 0),
+            'green': (0, 255, 0, 0),
+            'blue': (0, 0, 255, 0),
+            'purple': (127, 0, 127, 0),
             'r': 'red',
             'o': 'orange',
             'y': 'yellow',
