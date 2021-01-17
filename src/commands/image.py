@@ -29,13 +29,23 @@ class ImageEditing(commands.Cog, name='image'):
         for i in range(0, img.size[0]):  # process all pixels
             for j in range(0, img.size[1]):
                 pixel_data = img.getpixel((i, j))
-                new_color = tuple(abs(pixel_data[n] + round(color[n] * strength)) for n in range(4))
+
+                # NewValue = ((OldValue/255)*(1-strength)) + ((Recolor/255)*strength)
+                new_color = [
+                    abs(round(
+                        ((pixel_data[n] / 255) * (1 - strength) + (color[n] / 255) * strength) * 255
+                    )) for n in range(3)
+                ]
+
+                new_color.append(pixel_data[3])
+                new_color = tuple(new_color)
+
                 img.putpixel((i, j), new_color)
 
         return img
 
     @commands.command(aliases=['rc', 'recolour'])
-    async def recolor(self, ctx: object, color: str = 'yellow', strength: float = 100):
+    async def recolor(self, ctx: object, color: str = 'yellow', strength: float = 50):
         """
         Recolors above image
         :param ctx:
@@ -66,9 +76,9 @@ class ImageEditing(commands.Cog, name='image'):
 
         if color not in addition_colors:
             if not color.startswith('#'):
-                color ='#'+color
-            rgb= ImageColor.getrgb(color)
-            addition_colors[color] = (rgb[0],rgb[1],rgb[2],0)
+                color = '#' + color
+            rgb = ImageColor.getrgb(color)
+            addition_colors[color] = (rgb[0], rgb[1], rgb[2], 0)
 
         bot_msg = await ctx.send('`Editing images`')
         async with ctx.typing():
