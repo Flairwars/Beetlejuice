@@ -57,7 +57,7 @@ class SqlClass:
         except Exception as e:
             print(e)
 
-        return conn # food time adios  
+        return conn
 
     @staticmethod
     def create_table(conn, create_table_sql: str) -> None:
@@ -108,6 +108,49 @@ class SqlClass:
             except Exception as e:
                 print(e)
 
+    def get_roles(self, guild_id: int) -> list:
+        """Gets a list of every role on a server
+        :param guild_id:
+        :return:
+        """
+        sql = """SELECT role_id FROM roles WHERE guild_id = ?"""
+        data = self.execute(sql, (guild_id,))
+        return data
+
+    def add_roles(self, guild_id: int, roles: list) -> None:
+        """
+        Adds multiple roles to the db
+        :param guild_id: ID of server
+        :param roles: A list of new roles
+        :return:
+        """
+        sql = """INSERT INTO roles (`role_id`,`guild_id`) VALUES (?,?)"""
+        parms = [(role, guild_id) for role in roles]
+        self.execute_many(sql, parms)
+
+    def remove_roles(self, guild_id: int, roles: list) -> None:
+        """
+        Removes multiple roles from the db
+        :param guild_id: ID of server
+        :param roles: A list of deleted roles
+        :return:
+        """
+        sql = """DELETE FROM roles WHERE role_id = ? AND guild_id = ?"""
+        parms = [(role, guild_id) for role in roles]
+        self.execute_many(sql, parms)
+
+    def update_guild(self, guild_id: int):
+        """
+        Adds guild to server if the guild does not exist
+        :param guild_id:
+        :return:
+        """
+        sql = """INSERT INTO guilds (`guild_id`)
+        VALUES (?)
+        WHERE NOT EXISTS (
+            
+        )"""  # TODO: Finish formatting on this sql statement
+
     def add_user_roles(self, user_id: int, role_id: list, guild_id: int) -> None:
         """Adds user roles to database
         :param user_id:
@@ -117,7 +160,6 @@ class SqlClass:
         """
         sql = """INSERT INTO user_role (`user_id`, `role_id`, `guild_id`) VALUES (?,?,?)"""
         parms = [(user_id, role, guild_id) for role in role_id]
-
         self.execute_many(sql, parms)
 
     def remove_user_roles(self, user_id: int, guild_id: int) -> None:
@@ -128,15 +170,6 @@ class SqlClass:
         """
         sql = """DELETE FROM user_role WHERE `user_id` = ? AND `guild_id` = ?"""
         self.execute(sql, (user_id, guild_id))
-
-    def get_roles(self, guild_id: int) -> list:
-        """Gets a list of every role on a server
-        :param guild_id:
-        :return:
-        """
-        sql = """SELECT role_id FROM roles WHERE guild_id = ?"""
-        data = self.execute(sql, (guild_id,))
-        return data
 
     def add_guild(self, guild_id: int) -> None:
         """Adds a guild to database
@@ -154,5 +187,3 @@ class SqlClass:
         """
         sql = """INSERT INTO users (`user_id`,`guild_id`) VALUES (?,?)"""
         self.execute(sql, (user_id, guild_id))
-
-    # TODO: finish the rest of the functions
