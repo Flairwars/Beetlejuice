@@ -1,0 +1,158 @@
+import sqlite3
+
+
+# noinspection SqlNoDataSourceInspection
+class SqlClass:
+    def __init__(self):
+        self.database = 'datatables.db'
+
+        sql_create_guilds_table = """CREATE TABLE IF NOT EXISTS guilds (
+                                            guild_id integer PRIMARY KEY
+                                        );"""
+        sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
+                                                user_id integer,
+                                                guild_id integer,
+                                                PRIMARY KEY (user_id, guild_id),
+                                                FOREIGN KEY (guild_id) REFERENCES guilds (guild_id)
+                                            ); """
+        sql_create_roles_table = """ CREATE TABLE IF NOT EXISTS roles (
+                                                role_id integer,
+                                                guild_id integer,
+                                                PRIMARY KEY (role_id, guild_id),
+                                                FOREIGN KEY (guild_id) REFERENCES guilds (guild_id)
+                                            ); """
+        sql_create_user_role_table = """ CREATE TABLE IF NOT EXISTS user_role (
+                                                user_id integer,
+                                                role_id integer,
+                                                guild_id integer,
+                                                PRIMARY KEY (user_id, role_id, guild_id),
+                                                FOREIGN KEY (guild_id) REFERENCES guilds (guild_id),
+                                                FOREIGN KEY (role_id) REFERENCES roles (role_id),
+                                                FOREIGN KEY (user_id) REFERENCES users (user_id)
+                                            ); """
+
+        # create a database connection
+        conn = self.create_connection(self.database)
+
+        # create tables
+        if conn is not None:
+            self.create_table(conn, sql_create_roles_table)
+            self.create_table(conn, sql_create_users_table)
+            self.create_table(conn, sql_create_guilds_table)
+            self.create_table(conn, sql_create_user_role_table)
+        else:
+            print("Error! cannot create the database connection.")
+
+    @staticmethod
+    def create_connection(db_file):
+        """ create a database connection to the SQLite database
+            specified by db_file
+        :param db_file: database file
+        :return: Connection object or None
+        """
+        conn = None
+        try:
+            conn = sqlite3.connect(db_file)
+            return conn
+        except Exception as e:
+            print(e)
+
+        return conn # food time adios  
+
+    @staticmethod
+    def create_table(conn, create_table_sql: str) -> None:
+        """ create a table from the create_table_sql statement
+        :param conn: Connection object
+        :param create_table_sql: a CREATE TABLE statement
+        :return:
+        """
+        try:
+            c = conn.cursor()
+            c.execute(create_table_sql)
+        except Exception as e:
+            print(e)
+
+    def execute(self, sql: str, parms: tuple) -> list:
+        """Executes a single command
+        :param sql:
+        :param parms:
+        :return:
+        """
+        conn = self.create_connection(self.database)
+
+        if conn is not None:
+            try:
+                c = conn.cursor()
+                c.execute(sql, parms)
+                data = c.fetchall()
+                conn.commit()
+                return data
+            except Exception as e:
+                print(e)
+
+    def execute_many(self, sql: str, parms: list) -> list:
+        """Executes a multi line command
+        :param sql:
+        :param parms:
+        :return:
+        """
+        conn = self.create_connection(self.database)
+
+        if conn is not None:
+            try:
+                c = conn.cursor()
+                c.executemany(sql, parms)
+                data = c.fetchall()
+                conn.commit()
+                return data
+            except Exception as e:
+                print(e)
+
+    def add_user_roles(self, user_id: int, role_id: list, guild_id: int) -> None:
+        """Adds user roles to database
+        :param user_id:
+        :param role_id:
+        :param guild_id:
+        :return:
+        """
+        sql = """INSERT INTO user_role (`user_id`, `role_id`, `guild_id`) VALUES (?,?,?)"""
+        parms = [(user_id, role, guild_id) for role in role_id]
+
+        self.execute_many(sql, parms)
+
+    def remove_user_roles(self, user_id: int, guild_id: int) -> None:
+        """Removes user roles from database
+        :param user_id:
+        :param guild_id:
+        :return:
+        """
+        sql = """DELETE FROM user_role WHERE `user_id` = ? AND `guild_id` = ?"""
+        self.execute(sql, (user_id, guild_id))
+
+    def get_roles(self, guild_id: int) -> list:
+        """Gets a list of every role on a server
+        :param guild_id:
+        :return:
+        """
+        sql = """SELECT role_id FROM roles WHERE guild_id = ?"""
+        data = self.execute(sql, (guild_id,))
+        return data
+
+    def add_guild(self, guild_id: int) -> None:
+        """Adds a guild to database
+        :param guild_id:
+        :return:
+        """
+        sql = """INSERT INTO guilds (`guild_id`) VALUES (?)"""
+        self.execute(sql, (guild_id,))
+
+    def add_user(self, user_id: int, guild_id: int) -> None:
+        """Adds user to database
+        :param user_id:
+        :param guild_id:
+        :return:
+        """
+        sql = """INSERT INTO users (`user_id`,`guild_id`) VALUES (?,?)"""
+        self.execute(sql, (user_id, guild_id))
+
+    # TODO: finish the rest of the functions
