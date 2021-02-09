@@ -33,7 +33,6 @@ class SqlClass:
 
         # create a database connection
         conn = self.create_connection(self.database)
-
         # create tables
         if conn is not None:
             self.create_table(conn, sql_create_roles_table)
@@ -72,7 +71,7 @@ class SqlClass:
         except Exception as e:
             print(e)
 
-    def execute(self, sql: str, parms: tuple) -> list:
+    def execute(self, sql: str, parms: tuple = ()) -> list:
         """Executes a single command
         :param sql:
         :param parms:
@@ -108,14 +107,15 @@ class SqlClass:
             except Exception as e:
                 print(e)
 
+    ############################################################
+
     def get_roles(self, guild_id: int) -> list:
         """Gets a list of every role on a server
         :param guild_id:
         :return:
         """
         sql = """SELECT role_id FROM roles WHERE guild_id = ?"""
-        data = self.execute(sql, (guild_id,))
-        return data
+        return self.execute(sql, (guild_id,))
 
     def add_roles(self, guild_id: int, roles: list) -> None:
         """
@@ -139,17 +139,46 @@ class SqlClass:
         parms = [(role, guild_id) for role in roles]
         self.execute_many(sql, parms)
 
-    def update_guild(self, guild_id: int):
+    ############################################################
+
+    def get_guilds(self) -> list:
         """
-        Adds guild to server if the guild does not exist
-        :param guild_id:
+        Gets all the guilds recorded on the discord bot
+        :return: a tuple of all the discord server ids
+        """
+        sql = """SELECT guild_id FROM guilds"""
+        return self.execute(sql)
+
+    def add_guilds(self, guilds: list) -> None:
+        """
+        Adds multiple guilds to the db
+        :param guilds: A list of new guilds
         :return:
         """
-        sql = """INSERT INTO guilds (`guild_id`)
-        VALUES (?)
-        WHERE NOT EXISTS (
-            
-        )"""  # TODO: Finish formatting on this sql statement
+        sql = """INSERT INTO guilds (`guild_id`) VALUES (?)"""
+        parms = [(guild, ) for guild in guilds]
+        self.execute_many(sql, parms)
+
+    def remove_guilds(self, guilds: list) -> None:
+        """
+        Remove multiple guilds to the db
+        :param guilds: A list of old guilds
+        :return:
+        """
+        sql = """DELETE FROM guilds WHERE guild_id = ?"""
+        parms = [(guild, ) for guild in guilds]
+        self.execute_many(sql, parms)
+
+    ############################################################
+
+    def get_user_roles(self, user_id: int, guild_id: int) -> list:
+        """gets user roles from database
+        :param user_id: the users' id
+        :param guild_id: the current guild od
+        :return:
+        """
+        sql = """SELECT role_id FROM user_role WHERE user_id=? AND guild_id=?"""
+        return self.execute(sql, (user_id, guild_id))
 
     def add_user_roles(self, user_id: int, role_id: list, guild_id: int) -> None:
         """Adds user roles to database
@@ -171,19 +200,36 @@ class SqlClass:
         sql = """DELETE FROM user_role WHERE `user_id` = ? AND `guild_id` = ?"""
         self.execute(sql, (user_id, guild_id))
 
-    def add_guild(self, guild_id: int) -> None:
-        """Adds a guild to database
-        :param guild_id:
-        :return:
-        """
-        sql = """INSERT INTO guilds (`guild_id`) VALUES (?)"""
-        self.execute(sql, (guild_id,))
+    ############################################################
 
     def add_user(self, user_id: int, guild_id: int) -> None:
         """Adds user to database
-        :param user_id:
-        :param guild_id:
+        :param user_id: the discord id of the user
+        :param guild_id: the id of the current discord server
         :return:
         """
-        sql = """INSERT INTO users (`user_id`,`guild_id`) VALUES (?,?)"""
+        sql = """INSERT OR IGNORE INTO users (`user_id`,`guild_id`) VALUES (?,?)"""
         self.execute(sql, (user_id, guild_id))
+
+
+'''
+    def get_user(self, user_id: int, guild_id: int) -> list:
+        """Gets user's id from server
+        :param user_id: the user's id
+        :param guild_id: the id of the discord server
+        :return: the user's id or nothing
+        """
+        sql = """SELECT user_id FROM users WHERE user_id=? AND guild_id=?"""
+        return self.execute(sql, (user_id, guild_id))
+    
+
+    def update_guild(self, guilds: list):
+        """
+        Adds guild to server if the guild does not exist
+        :param guilds:
+        :return:
+        """
+        sql = """INSERT or IGNORE INTO guilds (`guild_id`) VALUES (?)"""
+        parms = [(guild, ) for guild in guilds]
+        self.execute_many(sql, parms)
+'''

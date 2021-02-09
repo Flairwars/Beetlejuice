@@ -13,10 +13,10 @@ class Role(commands.Cog, name='role'):
         self.client = client
         self.sql = SqlClass()
 
-    def update_roles(self, guild):
+    def _update_roles(self, guild):
         """
         Updates Roles in the database
-        :param guild:
+        :param guild: The guild class of the discord server that it is working on
         :return:
         """
         guild_roles = guild.roles
@@ -42,7 +42,30 @@ class Role(commands.Cog, name='role'):
 
         self.sql.remove_roles(guild_id, lst)
 
-    def update_guild(self, guild): pass
+    def _update_guild(self):
+        """
+        Updates Guilds in the database
+        :return:
+        """
+        guilds = self.client.guilds
+        guilds = [guild.id for guild in guilds]
+
+        db_guilds = self.sql.get_guilds()
+        db_guilds = [db_guilds[0] for db_guilds in db_guilds]
+
+        lst = []
+        for guild in guilds:
+            if guild not in db_guilds:
+                lst.append(guild)
+
+        self.sql.add_guilds(lst)
+
+        lst = []
+        for db_guild in db_guilds:
+            if db_guild not in guilds:
+                lst.append(db_guild)
+
+        self.sql.remove_guilds(lst)
 
     @commands.command(aliases=['clearroles','purgeroles'])
     @commands.has_permissions(administrator=True)
@@ -73,20 +96,64 @@ class Role(commands.Cog, name='role'):
         :param member: The users whos roles are getting added
         :return: Adds the users roles and removes their roles from the database
         """
-        guild = ctx.guild
-        username = member.name
+        self._update_guild()
+        self._update_roles(ctx.guild)
+
         user_id = member.id
+        guild = member.guild.id
+        user_roles = self.sql.get_user_roles(user_id, guild)
+        user_roles = [user_role[0] for user_role in user_roles]
 
-        self.update_roles(guild)
-
-
-        memberId = str(member.id)
-        memberGuildId = str(member.guild.id)
-        memberRoles = sql.get_user_role(memberId, memberGuildId)
-
-        if len(memberRoles) < 1:
+        if len(user_roles) < 1:
             await ctx.send(f'`{member.name} has no roles in my datatable`')
-            return
+        else:
+            message = await ctx.send(f"`adding {member.name}'s roles...`")
+
+            # gets a list of role classes
+            db_roles = []
+            for user_role in user_roles:
+                role = get(member.guild.roles, id=user_role)
+                db_roles.append(role)
+
+            # adds roles
+            try:
+                await member.add_roles(*db_roles, reason="Automatically added roles")
+            except DiscordException as e:
+                print(e)
+
+            self.sql.remove_user_roles(user_id, guild)
+            await message.edit(content=f"`updated {member.name}'s roles!`")
+
+    @staticmethod
+    @addroles.error
+    async def addroles_error(ctx, error):
+        if isinstance(error, commands.errors.MissingRequiredArgument):
+            await ctx.send('`MISSING ARGUMENTS: please specify a user`')
+        elif isinstance(error, commands.errors.MissingPermissions):
+            await ctx.send('`MISSING PERMS: you need to be an administrator to run this command`')
+        else:
+            print(error)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        """
+        adds member's roles to database when they leave
+        """
+        self._update_guild()
+        self._update_roles(member.guild)
+
+        user_id = member.id
+        user_guild_id = member.guild.id
+
+        self.sql.add_user(user_id, user_guild_id)
+
+        self.sql.remove_user_roles(user_id, user_guild_id)
+        user_roles = member.roles
+        lst = []
+        for user_role in user_roles:
+            if user_role.name != "@everyone":
+                lst.append(user_role.id)
+        self.sql.add_user_roles(user_id, lst, user_guild_id)
 
 
 def setup(client):
