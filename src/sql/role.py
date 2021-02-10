@@ -95,9 +95,9 @@ class SqlClass:
 
     def execute_many(self, sql: str, parms: list) -> list:
         """Executes a multi line command
-        :param sql:
-        :param parms:
-        :return:
+        :param sql: the sql command being run
+        :param parms: a list of tuples of information
+        :return: any output from the sql code
         """
         conn = self.create_connection(self.database)
 
