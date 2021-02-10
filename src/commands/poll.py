@@ -1,4 +1,5 @@
 from discord.ext import commands
+from sql.poll import SqlClass
 
 
 class Poll(commands.Cog, name='poll'):
@@ -7,6 +8,7 @@ class Poll(commands.Cog, name='poll'):
     """
     def __init__(self, client):
         self.client = client
+        self.sql = SqlClass()
 
     @commands.command()
     async def test(self, ctx):
