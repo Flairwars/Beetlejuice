@@ -2,6 +2,7 @@ import discord, re, datetime
 from discord.ext import commands
 from sql.poll import SqlClass
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from asyncio import sleep
 
 
 class Poll(commands.Cog, name='poll'):
@@ -52,6 +53,54 @@ class Poll(commands.Cog, name='poll'):
         else:
             return datetime.datetime.now() + datetime.timedelta(days=time_dict['d'], hours=time_dict['h'],
                                                                 minutes=time_dict['m'], seconds=time_dict['s'])
+
+    def _update_guild(self):
+        """
+        Updates Guilds in the database
+        :return:
+        """
+        guilds = self.client.guilds
+        guilds = [guild.id for guild in guilds]
+
+        db_guilds = self.sql.get_guilds()
+        db_guilds = [db_guilds[0] for db_guilds in db_guilds]
+
+        lst = []
+        for guild in guilds:
+            if guild not in db_guilds:
+                lst.append(guild)
+
+        self.sql.add_guilds(lst)
+
+        lst = []
+        for db_guild in db_guilds:
+            if db_guild not in guilds:
+                lst.append(db_guild)
+
+        self.sql.remove_guilds(lst)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        """Toggles user vote
+        :param payload: info about the user who voted
+        :return:
+        """
+        if payload.member == self.client.user: return
+
+        if self.sql.get_poll(payload.message_id, payload.channel_id, payload.guild_id):
+            if self.sql.check_vote(payload.user_id, payload.emoji.name, payload.message_id, payload.channel_id,
+                                   payload.guild_id):
+                self.sql.remove_vote(payload.user_id, payload.emoji.name, payload.message_id, payload.channel_id,
+                                     payload.guild_id)
+            else:
+                self.sql.add_user(payload.user_id, payload.guild_id)
+                self.sql.add_vote(payload.user_id, payload.emoji.name, payload.message_id,payload.channel_id,
+                                  payload.guild_id)
+
+            # deletes reaction if it found the poll
+            channel = self.client.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            await message.remove_reaction(payload.emoji, payload.member)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -114,6 +163,7 @@ class Poll(commands.Cog, name='poll'):
         await msg.edit(embed=embed)
 
         # SQL Setup
+        self._update_guild()
         self.sql.add_poll(msg.id, msg.channel.id, msg.author.guild.id, name, time)
         self.sql.add_options(msg.id, msg.channel.id, msg.author.guild.id, self.pollsigns, args)
 
@@ -136,11 +186,21 @@ class Poll(commands.Cog, name='poll'):
         :param ctx:
         :return: embed of votes sent to user's dms
         """
-        polls = self.sql.check_votes(ctx.author.id)
+        await ctx.message.delete()
+
+        '''
+        first count number of polls person voted on
+        how
+            what identifies a poll
+            message, channel, guild
+        polls = self.sql.check_votes(ctx.author.id, ctx.author.guild.id)
+        print(polls)
+        '''
+
+        '''
         # removes duplicate polls from data
         polls = list(dict.fromkeys(polls))
         await ctx.message.delete()
-
         if len(polls) == 0:
             msg = await ctx.send('You havent voted on any active polls')
             await sleep(10)
@@ -155,7 +215,7 @@ class Poll(commands.Cog, name='poll'):
                 embed = discord.Embed(title=f'on poll: {votes[0][1]}', color=discord.Color.green(),
                                       description=description)
                 await ctx.author.send(embed=embed)
-
+'''
 
 def setup(client):
     client.add_cog(Poll(client))
