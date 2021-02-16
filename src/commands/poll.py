@@ -9,6 +9,7 @@ class Poll(commands.Cog, name='poll'):
     """
     Poll commands
     """
+
     def __init__(self, client):
         self.client = client
         self.sql = SqlClass()
@@ -29,32 +30,7 @@ class Poll(commands.Cog, name='poll'):
         """
         await self.client.wait_until_ready()
 
-    @staticmethod
-    def date_convert(arg: str) -> datetime:
-        """Converts ddhhmmss into datetime
-        :param arg: ddhhmmss string
-        :return:
-        """
-        time_letters = ['d', 'h', 'm', 's']
-        time_dict = {}
-        check = False
-        for time_letter in time_letters:
-            found = arg.find(time_letter)
-            if found != -1:
-                check = True
-                split_arg = arg.split(time_letter)
-                time_dict[time_letter] = float(split_arg[0])
-                arg = split_arg[1]
-            else:
-                time_dict[time_letter] = 0
-
-        if not check:
-            raise discord.errors.DiscordException
-        else:
-            return datetime.datetime.now() + datetime.timedelta(days=time_dict['d'], hours=time_dict['h'],
-                                                                minutes=time_dict['m'], seconds=time_dict['s'])
-
-    def _update_guild(self):
+    def _update_guild(self) -> None:
         """
         Updates Guilds in the database
         :return:
@@ -79,8 +55,52 @@ class Poll(commands.Cog, name='poll'):
 
         self.sql.remove_guilds(lst)
 
+    def _delete_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
+        """Deletes the poll
+        :param message_id:
+        :param channel_id:
+        :param guild_id:
+        :return:
+        """
+        poll = self.sql.get_poll(message_id, channel_id, guild_id)
+        if poll: pass
+
+    async def _end_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
+        """Deletes the poll and outputs the channel
+        :param message_id:
+        :param channel_id:
+        :param guild_id:
+        :return:
+        """
+        description = ""
+        votes = self.sql.get_votes(message_id, channel_id, guild_id)
+        print(votes)
+        if len(votes) == 0:
+            description = 'no one voted :/'
+        else:
+            dict = {}
+            for vote in votes:
+                if vote[0] in dict.keys():
+                    dict[vote[0]] += 1
+                else:
+                    dict[vote[0]] = 1
+
+            for key, value in dict.items():
+                description += f'{value}'
+                if value == 1:
+                    description += f' vote for {key} \n\n'
+                else:
+                    description += f' votes for {key} \n\n'
+
+        self.sql.remove_poll(message_id, channel_id, guild_id)
+
+        embed = discord.Embed(title=votes[0][1], color=discord.Color.gold(), description=description)
+        channel = self.client.get_channel(channel_id)
+
+        await channel.send(embed=embed)
+
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         """Toggles user vote
         :param payload: info about the user who voted
         :return:
@@ -94,7 +114,7 @@ class Poll(commands.Cog, name='poll'):
                                      payload.guild_id)
             else:
                 self.sql.add_user(payload.user_id, payload.guild_id)
-                self.sql.add_vote(payload.user_id, payload.emoji.name, payload.message_id,payload.channel_id,
+                self.sql.add_vote(payload.user_id, payload.emoji.name, payload.message_id, payload.channel_id,
                                   payload.guild_id)
 
             # deletes reaction if it found the poll
@@ -102,9 +122,15 @@ class Poll(commands.Cog, name='poll'):
             message = await channel.fetch_message(payload.message_id)
             await message.remove_reaction(payload.emoji, payload.member)
 
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload) -> None:
+        if payload.cached_message is not None:
+            if payload.cached_message.author == self.client.user:
+                self._delete_poll(payload.message_id, payload.channel_id, payload.guild_id)
+
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def poll2(self, ctx, *, args):
+    async def poll2(self, ctx, *, args) -> None:
         """Creates anonymous poll with optional timed ending. limit of 20 options
         :param ctx:
         :param args: ddhhmmss {title}[arg][arg]
@@ -120,7 +146,23 @@ class Poll(commands.Cog, name='poll'):
             args = args[index:].lstrip()
 
             # converts to datetime
-            time = self.date_convert(time)
+            time_dict = {}
+            check = False
+            for time_letter in ['d', 'h', 'm', 's']:
+                found = time.find(time_letter)
+                if found != -1:
+                    check = True
+                    split_arg = time.split(time_letter)
+                    time_dict[time_letter] = float(split_arg[0])
+                    time = split_arg[1]
+                else:
+                    time_dict[time_letter] = 0
+
+            if not check:
+                raise discord.errors.DiscordException
+            else:
+                time = datetime.datetime.now() + datetime.timedelta(days=time_dict['d'], hours=time_dict['h'],
+                                                                    minutes=time_dict['m'], seconds=time_dict['s'])
 
             # checks if the args are formatted correctly
             if not self.reg.match(args):
@@ -156,7 +198,6 @@ class Poll(commands.Cog, name='poll'):
         embed = discord.Embed(title=name, color=discord.Color.gold(), description=description)
         embed.set_footer(text=footer)
         msg = await ctx.send(embed=embed)
-        msg2 = await ctx.send('`please wait until all reactions are added before reacting`')
         # adds a message id to the end of the poll
         footer += f'id: {msg.id}'
         embed.set_footer(text=footer)
@@ -166,14 +207,19 @@ class Poll(commands.Cog, name='poll'):
         self._update_guild()
         self.sql.add_poll(msg.id, msg.channel.id, msg.author.guild.id, name, time)
         self.sql.add_options(msg.id, msg.channel.id, msg.author.guild.id, self.pollsigns, args)
+        # Background task
+        if time:
+            self.sched.add_job(self._end_poll, "date", run_date=time,
+                               id=str(msg.id) + str(msg.channel.id) + str(msg.author.guild.id),
+                               args=(msg.id, msg.channel.id, msg.author.guild.id)
+                               )
 
         # adding reactions
         for count in range(len(args)):
             await msg.add_reaction(self.pollsigns[count])
-        await msg2.delete()
 
     @poll2.error
-    async def poll2_error(self, ctx, error):
+    async def poll2_error(self, ctx, error) -> None:
         if isinstance(error, commands.errors.MissingRequiredArgument) or isinstance(error,
                                                                                     discord.errors.DiscordException):
             await ctx.send('`ERROR Missing Required Argument: make sure it is .poll2 <time ddhhmmss> {title} [args]`')
@@ -181,41 +227,47 @@ class Poll(commands.Cog, name='poll'):
             print(error)
 
     @commands.command(aliases=['checkvote'])
-    async def checkvotes(self, ctx):
+    async def checkvotes(self, ctx) -> None:
         """Checks what polls you have voted on in this server
         :param ctx:
         :return: embed of votes sent to user's dms
         """
         await ctx.message.delete()
 
-        '''
-        first count number of polls person voted on
-        how
-            what identifies a poll
-            message, channel, guild
-        polls = self.sql.check_votes(ctx.author.id, ctx.author.guild.id)
-        print(polls)
-        '''
+        votes = self.sql.check_votes(ctx.author.id, ctx.author.guild.id)
+        # [(809138215331168317, 809080848057106432, 798298345177088022, '🇦', 'arg1', 'name of poll'), ...
+        # count unique occurrences of (message_id, channel_id, guild_id) in (votes[0],votes[1],votes[2])
+        polls = [(vote[0], vote[1], vote[2]) for vote in votes]  # removes unnessary code from list
+        polls = list(dict.fromkeys(polls))  # removes item if it appears in the list poll
+        # [(811247486101487646, 798309035945754694, 798298345177088022), ...
 
-        '''
-        # removes duplicate polls from data
-        polls = list(dict.fromkeys(polls))
-        await ctx.message.delete()
         if len(polls) == 0:
+            # sends output if user hasnt voted on anything
             msg = await ctx.send('You havent voted on any active polls')
             await sleep(10)
             await msg.delete()
         else:
+            # generates the embed
+            embed = discord.Embed(title="You have voted", colour=discord.Color.gold())
             for poll in polls:
-                votes = self.sql.check_votes(str(ctx.author.id), poll[0])
-
-                description = 'You have voted: \n\n'
+                # generates the field
+                title = ''
+                description = ''
                 for vote in votes:
-                    description += vote[0] + '\n'
-                embed = discord.Embed(title=f'on poll: {votes[0][1]}', color=discord.Color.green(),
-                                      description=description)
+                    if (vote[0], vote[1], vote[2]) == poll:  # goes though each poll once by one
+                        # TODO: Rewrite code to automatically do this using list ordering rather than this
+                        title = vote[-1]
+                        description += f"\n{vote[3]} {vote[4]}\n"
+
+                embed.add_field(name=title, value=description[:-1], inline=True)
+            try:
                 await ctx.author.send(embed=embed)
-'''
+            except discord.errors.Forbidden:
+                # if user has dms disabled
+                msg = await ctx.send('I cant send you a DM! please check your discord settings')
+                await sleep(10)
+                await msg.delete()
+
 
 def setup(client):
     client.add_cog(Poll(client))

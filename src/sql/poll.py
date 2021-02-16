@@ -6,7 +6,16 @@ import datetime
 class SqlClass:
     def __init__(self):
         self.database = 'datatables.db'
-
+        sql_create_guilds_table = """CREATE TABLE IF NOT EXISTS guilds (
+                                                    guild_id integer PRIMARY KEY
+                                                );"""
+        sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
+                                                    user_id integer,
+                                                    guild_id integer,
+                                                    FOREIGN KEY (guild_id) REFERENCES guilds (guild_id) 
+                                                        ON DELETE CASCADE ON UPDATE CASCADE,
+                                                    PRIMARY KEY (user_id, guild_id)
+                                                ); """
         sql_create_polls_table = """CREATE TABLE IF NOT EXISTS polls (
                                             message_id integer,
                                             channel_id integer,
@@ -47,6 +56,8 @@ class SqlClass:
         # create tables
         if conn is not None:
             conn.execute("PRAGMA foreign_keys = ON")
+            self.create_table(conn, sql_create_guilds_table)
+            self.create_table(conn, sql_create_users_table)
             self.create_table(conn, sql_create_polls_table)
             self.create_table(conn, sql_create_options_table)
             self.create_table(conn, sql_create_votes_table)
@@ -167,8 +178,19 @@ class SqlClass:
         :param guild_id: the guild that the poll is in
         :return: the message id of the poll
         """
-        sql = """SELECT message_id FROM polls WHERE message_id=? AND channel_id=? AND guild_id=?"""
+        sql = """SELECT time, message_id, channel_id, guild_id FROM polls
+        WHERE message_id=? AND channel_id=? AND guild_id=?"""
         return self.execute(sql, (message_id, channel_id, guild_id))
+
+    def remove_poll(self, message_id: int, channel_id: int, guild_id: int ):
+        """Deletes a vote
+        :param message_id: the message id of the poll
+        :param channel_id: the channel id of the poll
+        :param guild_id: the guild that the poll is in
+        :return:
+        """
+        sql = """DELETE FROM polls WHERE message_id=? AND channel_id=? AND guild_id=?"""
+        self.execute(sql, (message_id, channel_id, guild_id))
 
     def add_options(self, message_id: int, channel_id: int, guild_id: int, emote_ids: list, names: list) -> None:
         """Creates all the options in the options table
@@ -229,6 +251,21 @@ class SqlClass:
         WHERE votes.user_id=? AND votes.emote_id=? AND votes.message_id=? AND votes.channel_id=? AND votes.guild_id=?"""
         return self.execute(sql, (user_id, emote_id, message_id, channel_id, guild_id))
 
+    def get_votes(self, message_id: int, channel_id: int, guild_id: int) -> list:
+        """Gets all the votes of a specific poll
+        :param message_id: the message id of the poll
+        :param channel_id: the channel id of the poll
+        :param guild_id: the guild that the poll is in
+        :return:
+        """
+        sql = """SELECT votes.emote_id, polls.name FROM votes, polls
+        WHERE votes.message_id=? AND votes.channel_id=? AND votes.guild_id=?
+        AND votes.message_id=polls.message_id
+        AND votes.channel_id=polls.channel_id
+        AND votes.guild_id=polls.guild_id
+        """
+        return self.execute(sql, (message_id, channel_id, guild_id))
+
     def check_votes(self, user_id: int, guild_id: int) -> list:
         """Returns the name of every poll that the user has voted on
         :param user_id: the user id of the poll
@@ -236,16 +273,15 @@ class SqlClass:
         :return:
         """
         sql = """
-        SELECT polls.name, options.name, options.emote_id FROM polls, votes, options
-        WHERE polls.message_id = votes.message_id AND polls.guild_id = votes.guild_id AND 
-        polls.guild_id = votes.guild_id AND votes.message_id = options.message_id AND
-        votes.channel_id = options.channel_id AND votes.guild_id = options.guild_id AND
-        votes.user_id = ? AND votes.guild_id = ?
+        SELECT polls.message_id, polls.channel_id, polls.guild_id, options.emote_id, options.name, polls.name
+        FROM votes, options, polls
+        WHERE votes.user_id = ? AND votes.guild_id = ?
+        AND votes.emote_id = options.emote_id
+        AND votes.message_id = options.message_id AND options.message_id = polls.message_id
+        AND votes.channel_id = options.channel_id AND options.channel_id = polls.channel_id
+        AND votes.guild_id = options.guild_id AND options.guild_id = polls.guild_id
         """
         # making sure its referring to the correct poll by insuring that the message is constant
         # making sure its talking about the correct vote my making sure the emote id is constant
         # should work
         return self.execute(sql, (user_id, guild_id))
-
-
-
