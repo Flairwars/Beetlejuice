@@ -10,34 +10,38 @@ class SqlClass:
                                             guild_id integer PRIMARY KEY
                                         );"""
         sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
-                                                user_id integer,
-                                                guild_id integer,
-                                                PRIMARY KEY (user_id, guild_id),
-                                                FOREIGN KEY (guild_id) REFERENCES guilds (guild_id)
-                                            ); """
+                                            user_id integer,
+                                            guild_id integer,
+                                            FOREIGN KEY (guild_id) REFERENCES guilds (guild_id) 
+                                                ON DELETE CASCADE ON UPDATE CASCADE,
+                                            PRIMARY KEY (user_id, guild_id)
+                                        ); """
         sql_create_roles_table = """ CREATE TABLE IF NOT EXISTS roles (
-                                                role_id integer,
-                                                guild_id integer,
-                                                PRIMARY KEY (role_id, guild_id),
-                                                FOREIGN KEY (guild_id) REFERENCES guilds (guild_id)
-                                            ); """
+                                            role_id integer,
+                                            guild_id integer,
+                                            FOREIGN KEY (guild_id) REFERENCES guilds (guild_id) 
+                                                ON DELETE CASCADE ON UPDATE CASCADE,
+                                            PRIMARY KEY (role_id, guild_id)
+                                        ); """
         sql_create_user_role_table = """ CREATE TABLE IF NOT EXISTS user_role (
-                                                user_id integer,
-                                                role_id integer,
-                                                guild_id integer,
-                                                PRIMARY KEY (user_id, role_id, guild_id),
-                                                FOREIGN KEY (guild_id) REFERENCES guilds (guild_id),
-                                                FOREIGN KEY (role_id) REFERENCES roles (role_id),
-                                                FOREIGN KEY (user_id) REFERENCES users (user_id)
-                                            ); """
+                                            user_id integer,
+                                            role_id integer,
+                                            guild_id integer,
+                                            FOREIGN KEY (role_id, guild_id) REFERENCES roles (role_id, guild_id) 
+                                                ON UPDATE CASCADE ON DELETE CASCADE,
+                                            FOREIGN KEY (user_id, guild_id) REFERENCES users (user_id, guild_id) 
+                                                ON UPDATE CASCADE ON DELETE CASCADE,
+                                            PRIMARY KEY (user_id, role_id, guild_id)
+                                        ); """
 
         # create a database connection
         conn = self.create_connection(self.database)
         # create tables
         if conn is not None:
-            self.create_table(conn, sql_create_roles_table)
-            self.create_table(conn, sql_create_users_table)
+            conn.execute("PRAGMA foreign_keys = ON")
             self.create_table(conn, sql_create_guilds_table)
+            self.create_table(conn, sql_create_users_table)
+            self.create_table(conn, sql_create_roles_table)
             self.create_table(conn, sql_create_user_role_table)
         else:
             print("Error! cannot create the database connection.")
@@ -91,9 +95,9 @@ class SqlClass:
 
     def execute_many(self, sql: str, parms: list) -> list:
         """Executes a multi line command
-        :param sql:
-        :param parms:
-        :return:
+        :param sql: the sql command being run
+        :param parms: a list of tuples of information
+        :return: any output from the sql code
         """
         conn = self.create_connection(self.database)
 
