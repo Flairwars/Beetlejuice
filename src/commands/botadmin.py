@@ -1,5 +1,5 @@
 import discord
-# import github
+import git
 from discord.ext import commands
 
 
@@ -22,7 +22,8 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=embedMsg)
 
 
-'''    @commands.command(name='gitpull')
+
+    @commands.command(name='gitpull')
     @commands.is_owner()
     async def git_pull(self, ctx):
         git_dir = "./"
@@ -39,7 +40,7 @@ class AdminCog(commands.Cog):
             await ctx.channel.send(embed=embed)
         else:
             await ctx.send("You don't have access to this command! Ask Pepper about it if you need help!")
-'''
+
 
 def setup(bot):
     bot.add_cog(AdminCog(bot))
