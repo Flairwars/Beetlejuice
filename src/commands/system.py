@@ -1,5 +1,6 @@
 from time import time
 from discord.ext import commands
+import git
 
 
 class System(commands.Cog, name='System commands'):
@@ -57,6 +58,34 @@ class System(commands.Cog, name='System commands'):
         await ctx.send(f'`successfully reloaded {cog}`')
         print('success!')
 
+    @commands.command(name='status')
+    @commands.is_owner()
+    async def status(self, ctx, game):
+        game = discord.Game(game)
+        await self.bot.change_presence(status=discord.Status.online, activity=game)
+        embedMsg = discord.Embed(color=0xFCF4A3, title=":sunny::sunflower: Status Changed :sunflower::sunny:")
+        await ctx.send(embed=embedMsg)
+
+
+    @commands.command(name='gitpull')
+    @commands.is_owner()
+    async def git_pull(self, ctx):
+        git_dir = "./"
+        try:
+            g = git.cmd.Git(git_dir)
+            g.pull()
+            embed = discord.Embed(title=":white_check_mark: Successfully pulled from repository", color=0x00df00)
+            await ctx.channel.send(embed=embed)
+        except Exception as e:
+            errno, strerror = e.args
+            embed = discord.Embed(title="Command Error!",
+                                    description=f"Git Pull Error: {errno} - {strerror}",
+                                    color=0xff0007)
+            await ctx.channel.send(embed=embed)
+        else:
+            await ctx.send("You don't have access to this command! Ask Pepper about it if you need help!")
+
+
     # Loading and unloading of cogs Error handling
     @load.error
     async def load_error(self, ctx: object, error: object):
@@ -85,6 +114,28 @@ class System(commands.Cog, name='System commands'):
         # error if cog doesnt exist
         if isinstance(error, commands.CommandInvokeError):
             await ctx.send('`ERROR: cog has not been reloaded`')
+
+        # error if user is not bot owner/insufficient perms
+        if isinstance(error, commands.errors.NotOwner):
+            await ctx.send('`ERROR: insufficient perms to run this command`')
+        print('failure!')
+
+    @status.error
+    async def status_error(self, ctx: object, error: object):
+        # error if cog doesnt exist
+        if isinstance(error, commands.CommandInvokeError):
+            await ctx.send('`ERROR: cog has not been loaded`')
+
+        # error if user is not bot owner/insufficient perms
+        if isinstance(error, commands.errors.NotOwner):
+            await ctx.send('`ERROR: insufficient perms to run this command`')
+        print('failure!')
+
+    @git_pull.error
+    async def git_pull_error(self, ctx: object, error: object):
+        # error if cog doesnt exist
+        if isinstance(error, commands.CommandInvokeError):
+            await ctx.send('`ERROR: cog has not been loaded`')
 
         # error if user is not bot owner/insufficient perms
         if isinstance(error, commands.errors.NotOwner):
