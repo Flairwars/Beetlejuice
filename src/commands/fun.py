@@ -18,6 +18,7 @@ class Fun(commands.Cog, name='Fun'):
                     "https://imgur.com/BEG77iA", "https://imgur.com/qxeXsRr", "https://imgur.com/osZF2GM",
                     "https://imgur.com/PqotrGa", "https://imgur.com/sYCVhZ1", "https://imgur.com/ItZk2E7",
                     "https://imgur.com/ng81k8S", "https://imgur.com/4bGa09O"]
+        hug_author = ctx.author.nick
 
         if target is None:
             await ctx.send(f"*hugs back*")
@@ -27,7 +28,8 @@ class Fun(commands.Cog, name='Fun'):
             return
 
         else:
-            hug_result = random.shuffle(hug_urls)
+            hug_result = random.choice(hug_urls)
+            await ctx.send(f"A hug from {hug_author}")
             await ctx.send(f"{hug_result}")
             return
 
