@@ -72,29 +72,24 @@ class Poll(commands.Cog, name='poll'):
         :param guild_id:
         :return:
         """
-        description = ""
-        votes = self.sql.get_votes(message_id, channel_id, guild_id)
-        print(votes)
-        if len(votes) == 0:
-            description = 'no one voted :/'
-        else:
-            dict = {}
-            for vote in votes:
-                if vote[0] in dict.keys():
-                    dict[vote[0]] += 1
-                else:
-                    dict[vote[0]] = 1
+        poll_info = self.sql.get_poll(message_id, channel_id, guild_id)
 
-            for key, value in dict.items():
-                description += f'{value}'
-                if value == 1:
-                    description += f' vote for {key} \n\n'
-                else:
-                    description += f' votes for {key} \n\n'
+        votes = {}
+        for poll in poll_info:
+            votes[poll[2]] = [0, poll[1]]
+
+        user_votes = self.sql.get_votes(message_id, channel_id, guild_id)
+
+        for vote in user_votes:
+            votes[vote[0]][0] += 1
+
+        description = ''
+        for emote, value in votes.items():
+            description += f'{emote} {value[1]}: {value[0]}\n'
 
         self.sql.remove_poll(message_id, channel_id, guild_id)
 
-        embed = discord.Embed(title=votes[0][1], color=discord.Color.gold(), description=description)
+        embed = discord.Embed(title=poll_info[0][0], color=discord.Color.gold(), description=description)
         channel = self.client.get_channel(channel_id)
 
         await channel.send(embed=embed)

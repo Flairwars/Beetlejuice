@@ -178,8 +178,12 @@ class SqlClass:
         :param guild_id: the guild that the poll is in
         :return: the message id of the poll
         """
-        sql = """SELECT time, message_id, channel_id, guild_id FROM polls
-        WHERE message_id=? AND channel_id=? AND guild_id=?"""
+        sql = """SELECT polls.name, options.name, options.emote_id, polls.message_id, polls.channel_id, polls.guild_id 
+        FROM polls, options
+        WHERE polls.message_id=? AND polls.channel_id=? AND polls.guild_id=?
+        AND polls.message_id = options.message_id
+        AND polls.channel_id = options.channel_id
+        AND polls.guild_id = options.guild_id"""
         return self.execute(sql, (message_id, channel_id, guild_id))
 
     def remove_poll(self, message_id: int, channel_id: int, guild_id: int ):
@@ -258,12 +262,8 @@ class SqlClass:
         :param guild_id: the guild that the poll is in
         :return:
         """
-        sql = """SELECT votes.emote_id, polls.name FROM votes, polls
-        WHERE votes.message_id=? AND votes.channel_id=? AND votes.guild_id=?
-        AND votes.message_id=polls.message_id
-        AND votes.channel_id=polls.channel_id
-        AND votes.guild_id=polls.guild_id
-        """
+        sql = """SELECT votes.emote_id FROM votes 
+        WHERE votes.message_id=? AND votes.channel_id=? AND votes.guild_id=?"""
         return self.execute(sql, (message_id, channel_id, guild_id))
 
     def check_votes(self, user_id: int, guild_id: int) -> list:
