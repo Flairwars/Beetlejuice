@@ -36,14 +36,15 @@ class Poll(commands.Cog, name='poll'):
         for poll in polls:
             if not poll[0]:
                 pass  # no end time, does nothign
-            time = datetime.datetime.strptime(poll[0], '%Y-%m-%d %H:%M:%S.%f')
-            if time > now:
-                self.sched.add_job(self._end_poll, "date", run_date=time,
-                                   id=str(poll[1]) + str(poll[2]) + str(poll[3]),
-                                   args=(poll[1], poll[2], poll[3])
-                                   )
             else:
-                await self._end_poll(poll[1], poll[2], poll[3])
+                time = datetime.datetime.strptime(poll[0], '%Y-%m-%d %H:%M:%S.%f')
+                if time > now:
+                    self.sched.add_job(self._end_poll, "date", run_date=time,
+                                       id=str(poll[1]) + str(poll[2]) + str(poll[3]),
+                                       args=(poll[1], poll[2], poll[3])
+                                       )
+                else:
+                    await self._end_poll(poll[1], poll[2], poll[3])
 
     def _update_guild(self) -> None:
         """Updates Guilds in the database
@@ -89,6 +90,7 @@ class Poll(commands.Cog, name='poll'):
         :param guild_id: guild id of the poll
         :return:
         """
+        self._update_guild()
         embed = self._count_poll(message_id, channel_id, guild_id)
         channel = self.client.get_channel(channel_id)
 
@@ -215,10 +217,13 @@ class Poll(commands.Cog, name='poll'):
         for count in range(len(args)):
             description += f'{self.pollsigns[count]} {args[count]}\n\n'
 
+        footer = 'endpoll <id> (true for dms)'
+
         embed = discord.Embed(title=name, color=discord.Color.gold(), description=description)
+        embed.set_footer(text=footer)
         msg = await ctx.send(embed=embed)
         # adds a message id to the end of the poll
-        footer = f'id: {msg.id}'
+        footer += f'\nid: {msg.id}'
         embed.set_footer(text=footer)
         await msg.edit(embed=embed)
 
@@ -327,6 +332,76 @@ class Poll(commands.Cog, name='poll'):
                 '`ERROR Missing Required Argument: make sure it is .endpoll <message id> <send to dms True/False>`')
         else:
             print(error)
+
+    @commands.command()
+    async def poll(self, ctx, *, args: str = ' ') -> None:
+        """
+        Normal poll. Does {title} [option] [option] and "Foo Bar"
+        :param ctx:
+        :param args:
+        :return:
+        """
+        if not self.reg.match(args):
+            await ctx.message.add_reaction('👍')
+            await ctx.message.add_reaction('👎')
+            await ctx.message.add_reaction('🤷‍♀️')
+            return
+
+        args = args.split('[')
+        name = args.pop(0)[1:]
+        name = name[:name.find('}')]
+
+        args = [arg[:arg.find(']')] for arg in args]  # thanks ritz for this line
+
+        if len(args) > 20:
+            await ctx.send(f"bad {ctx.author.name}! thats too much polling >:(")
+            return
+        elif len(args) == 0:
+            await ctx.send(f"bad {ctx.author.name}! thats too little polling >:(")
+            return
+        elif name == '' or '' in args:
+            await ctx.send(f"bad {ctx.author.name}! thats too simplistic polling >:(")
+            return
+
+        description = ''
+        for count in range(len(args)):
+            description += f'{self.pollsigns[count]} {args[count]}\n\n'
+
+        embed = discord.Embed(title=name, color=discord.Color.gold(), description=description)
+        msg = await ctx.send(embed=embed)
+
+        # add reactions
+        for count in range(len(args)):
+            await msg.add_reaction(self.pollsigns[count])
+
+    @commands.command(aliases=['rp'])
+    async def raidpoll(self, ctx, *, title='Raid Times'):
+        """
+        creates a poll for raiding
+        """
+        emotes = ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯", "🇰", "🇱"]
+        description = """
+        🇦 1:00\n
+        🇧 2:00\n
+        🇨 3:00\n
+        🇩 4:00\n
+        🇪 5:00\n
+        🇫 6:00\n
+        🇬 7:00\n
+        🇭 8:00\n
+        🇮 9:00\n
+        🇯 10:00\n
+        🇰 11:00\n
+        🇱 12:00\n
+        """
+        embed = discord.Embed(title=f'{title} AM', color=discord.Color.gold(), description=description)
+        msg = await ctx.send(embed=embed)
+        embed = discord.Embed(title=f'{title} PM', color=discord.Color.gold(), description=description)
+        msg2 = await ctx.send(embed=embed)
+
+        for emote in emotes:
+            await msg.add_reaction(emote)
+            await msg2.add_reaction(emote)
 
 
 def setup(client):
