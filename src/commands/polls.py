@@ -1,13 +1,13 @@
 import discord, re, datetime
 from discord.ext import commands
-from sql.poll import SqlClass
+from sql.polls import SqlClass
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from asyncio import sleep
 
 
-class Poll(commands.Cog, name='poll'):
+class Polls(commands.Cog, name='polls'):
     """
-    Poll commands
+    Polls commands
     """
 
     def __init__(self, client):
@@ -405,4 +405,4 @@ class Poll(commands.Cog, name='poll'):
 
 
 def setup(client):
-    client.add_cog(Poll(client))
+    client.add_cog(Polls(client))
