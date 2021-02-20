@@ -178,12 +178,37 @@ class SqlClass:
         :param guild_id: the guild that the poll is in
         :return: the message id of the poll
         """
+        sql = """SELECT polls.name, options.name, options.emote_id, polls.message_id, polls.channel_id, polls.guild_id 
+        FROM polls, options
+        WHERE polls.message_id=? AND polls.channel_id=? AND polls.guild_id=?
+        AND polls.message_id = options.message_id
+        AND polls.channel_id = options.channel_id
+        AND polls.guild_id = options.guild_id"""
+        return self.execute(sql, (message_id, channel_id, guild_id))
+
+    def get_polls(self):
+        """Selects all polls in the database for setup
+        :return: poll id and time
+        """
+        sql = """SELECT time, message_id, channel_id, guild_id FROM polls"""
+        return self.execute(sql, ())
+
+    def get_poll_time(self, message_id: int, channel_id: int, guild_id: int) -> list:
+        """Gets poll time
+        :param message_id: the message id of the poll
+        :param channel_id: the channel id of the poll
+        :param guild_id: the guild that the poll is in
+        :param message_id:
+        :param channel_id:
+        :param guild_id:
+        :return:
+        """
         sql = """SELECT time, message_id, channel_id, guild_id FROM polls
         WHERE message_id=? AND channel_id=? AND guild_id=?"""
         return self.execute(sql, (message_id, channel_id, guild_id))
 
-    def remove_poll(self, message_id: int, channel_id: int, guild_id: int ):
-        """Deletes a vote
+    def remove_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
+        """Deletes a poll
         :param message_id: the message id of the poll
         :param channel_id: the channel id of the poll
         :param guild_id: the guild that the poll is in
@@ -258,12 +283,8 @@ class SqlClass:
         :param guild_id: the guild that the poll is in
         :return:
         """
-        sql = """SELECT votes.emote_id, polls.name FROM votes, polls
-        WHERE votes.message_id=? AND votes.channel_id=? AND votes.guild_id=?
-        AND votes.message_id=polls.message_id
-        AND votes.channel_id=polls.channel_id
-        AND votes.guild_id=polls.guild_id
-        """
+        sql = """SELECT votes.emote_id FROM votes 
+        WHERE votes.message_id=? AND votes.channel_id=? AND votes.guild_id=?"""
         return self.execute(sql, (message_id, channel_id, guild_id))
 
     def check_votes(self, user_id: int, guild_id: int) -> list:
@@ -281,7 +302,4 @@ class SqlClass:
         AND votes.channel_id = options.channel_id AND options.channel_id = polls.channel_id
         AND votes.guild_id = options.guild_id AND options.guild_id = polls.guild_id
         """
-        # making sure its referring to the correct poll by insuring that the message is constant
-        # making sure its talking about the correct vote my making sure the emote id is constant
-        # should work
         return self.execute(sql, (user_id, guild_id))
