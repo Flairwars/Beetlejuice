@@ -207,8 +207,8 @@ class SqlClass:
         WHERE message_id=? AND channel_id=? AND guild_id=?"""
         return self.execute(sql, (message_id, channel_id, guild_id))
 
-    def remove_poll(self, message_id: int, channel_id: int, guild_id: int ):
-        """Deletes a vote
+    def remove_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
+        """Deletes a poll
         :param message_id: the message id of the poll
         :param channel_id: the channel id of the poll
         :param guild_id: the guild that the poll is in
@@ -302,7 +302,4 @@ class SqlClass:
         AND votes.channel_id = options.channel_id AND options.channel_id = polls.channel_id
         AND votes.guild_id = options.guild_id AND options.guild_id = polls.guild_id
         """
-        # making sure its referring to the correct poll by insuring that the message is constant
-        # making sure its talking about the correct vote my making sure the emote id is constant
-        # should work
         return self.execute(sql, (user_id, guild_id))

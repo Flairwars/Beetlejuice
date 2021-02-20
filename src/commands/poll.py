@@ -24,7 +24,7 @@ class Poll(commands.Cog, name='poll'):
 
         client.loop.create_task(self._async_init())
 
-    async def _async_init(self):
+    async def _async_init(self) -> None:
         """Queues up all in progress polls
         :return:
         """
@@ -83,10 +83,10 @@ class Poll(commands.Cog, name='poll'):
                 self.sched.remove_job(str(poll[0][1]) + str(poll[0][2]) + str(poll[0][3]))
 
     async def _end_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
-        """Deletes the poll and outputs the channel
-        :param message_id:
-        :param channel_id:
-        :param guild_id:
+        """End function for when timed polls finish. counts up votes and sends into channel
+        :param message_id: message id of the poll
+        :param channel_id: channel id of the poll
+        :param guild_id: guild id of the poll
         :return:
         """
         embed = self._count_poll(message_id, channel_id, guild_id)
@@ -145,13 +145,18 @@ class Poll(commands.Cog, name='poll'):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload) -> None:
+        """Checks whether a user deleted one of gregories messages
+        then checks whether it was one of the polls and deletes it
+        :param payload:
+        :return:
+        """
         if payload.cached_message is not None:
             if payload.cached_message.author == self.client.user:
                 self._delete_poll(payload.message_id, payload.channel_id, payload.guild_id)
 
-    @commands.command()
+    @commands.command(aliases=['poll2'])
     @commands.has_permissions(administrator=True)
-    async def poll2(self, ctx, *, args) -> None:
+    async def anonpoll(self, ctx, *, args) -> None:
         """Creates anonymous poll with optional timed ending. limit of 20 options
         :param ctx:
         :param args: ddhhmmss {title}[arg][arg]
@@ -239,8 +244,13 @@ class Poll(commands.Cog, name='poll'):
         for count in range(len(args)):
             await msg.add_reaction(self.pollsigns[count])
 
-    @poll2.error
-    async def poll2_error(self, ctx, error) -> None:
+    @anonpoll.error
+    async def pollanon_error(self, ctx, error) -> None:
+        """Error output for poll
+        :param ctx:
+        :param error: The type of error
+        :return:
+        """
         if isinstance(error, commands.errors.MissingRequiredArgument) or isinstance(error,
                                                                                     discord.errors.DiscordException):
             await ctx.send('`ERROR Missing Required Argument: make sure it is .poll2 <time ddhhmmss> {title} [args]`')
@@ -313,10 +323,15 @@ class Poll(commands.Cog, name='poll'):
 
     @endpoll.error
     async def endpoll_error(self, ctx, error):
+        """Error handling for the end poll function
+        :param ctx:
+        :param error:
+        :return:
+        """
         if isinstance(error, commands.errors.MissingRequiredArgument) or isinstance(error,
                                                                                     discord.errors.DiscordException):
             await ctx.send(
-                '`ERROR Missing Required Argument: make sure it is .deletepoll <message id> <send to dms True/False>`')
+                '`ERROR Missing Required Argument: make sure it is .endpoll <message id> <send to dms True/False>`')
         else:
             print(error)
 
