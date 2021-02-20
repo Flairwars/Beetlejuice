@@ -93,6 +93,7 @@ class Poll(commands.Cog, name='poll'):
         channel = self.client.get_channel(channel_id)
 
         await channel.send(embed=embed)
+        self.sql.remove_poll(message_id, channel_id, guild_id)
 
     def _count_poll(self, message_id: int, channel_id: int, guild_id: int) -> object:
         """Counts up the votes for a poll and returns the embed
@@ -115,8 +116,6 @@ class Poll(commands.Cog, name='poll'):
         description = ''
         for emote, value in votes.items():
             description += f'{emote} {value[1]}: {value[0]}\n'
-
-        self.sql.remove_poll(message_id, channel_id, guild_id)
 
         embed = discord.Embed(title=poll_info[0][0], color=discord.Color.gold(), description=description)
         return embed
@@ -301,8 +300,16 @@ class Poll(commands.Cog, name='poll'):
         embed = self._count_poll(message_id, ctx.channel.id, ctx.author.guild.id)
         if not dm:
             await ctx.send(embed=embed)
+            self.sql.remove_poll(message_id, ctx.channel.id, ctx.author.guild.id)
         else:
-            await ctx.author.send(embed=embed)
+            try:
+                await ctx.author.send(embed=embed)
+                self.sql.remove_poll(message_id, ctx.channel.id, ctx.author.guild.id)
+            except discord.errors.Forbidden:
+                # if user has dms disabled
+                msg = await ctx.send('I cant send you a DM! please check your discord settings')
+                await sleep(10)
+                await msg.delete()
 
     @endpoll.error
     async def endpoll_error(self, ctx, error):
