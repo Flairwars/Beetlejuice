@@ -29,7 +29,7 @@ class Poll(commands.Cog, name='poll'):
         :return:
         """
         await self.client.wait_until_ready()
-
+        self._update_guild()
         polls = self.sql.get_polls()
         now = datetime.datetime.now()
 
@@ -159,7 +159,7 @@ class Poll(commands.Cog, name='poll'):
     async def anonpoll(self, ctx, *, args) -> None:
         """Creates anonymous poll with optional timed ending. limit of 20 options
         :param ctx:
-        :param args: ddhhmmss {title}[arg][arg]
+        :param args: 1d2h3m4s {title}[arg][arg]
         :return: Creates a poll with timed output
         """
         time = None
@@ -215,17 +215,10 @@ class Poll(commands.Cog, name='poll'):
         for count in range(len(args)):
             description += f'{self.pollsigns[count]} {args[count]}\n\n'
 
-        # footer
-        footer = ''
-        if time:
-            strtime = time.strftime("%m/%d/%Y, %H:%M:%S")
-            footer += f'time: {strtime}\n'
-
         embed = discord.Embed(title=name, color=discord.Color.gold(), description=description)
-        embed.set_footer(text=footer)
         msg = await ctx.send(embed=embed)
         # adds a message id to the end of the poll
-        footer += f'id: {msg.id}'
+        footer = f'id: {msg.id}'
         embed.set_footer(text=footer)
         await msg.edit(embed=embed)
 
@@ -253,7 +246,7 @@ class Poll(commands.Cog, name='poll'):
         """
         if isinstance(error, commands.errors.MissingRequiredArgument) or isinstance(error,
                                                                                     discord.errors.DiscordException):
-            await ctx.send('`ERROR Missing Required Argument: make sure it is .poll2 <time ddhhmmss> {title} [args]`')
+            await ctx.send('`ERROR Missing Required Argument: make sure it is .anonpoll <time 1d2h3m4s> {title} [args]`')
         else:
             print(error)
 
