@@ -186,6 +186,27 @@ class SqlClass:
         AND polls.guild_id = options.guild_id"""
         return self.execute(sql, (message_id, channel_id, guild_id))
 
+    def get_polls(self):
+        """Selects all polls in the database for setup
+        :return: poll id and time
+        """
+        sql = """SELECT time, message_id, channel_id, guild_id FROM polls"""
+        return self.execute(sql, ())
+
+    def get_poll_time(self, message_id: int, channel_id: int, guild_id: int) -> list:
+        """Gets poll time
+        :param message_id: the message id of the poll
+        :param channel_id: the channel id of the poll
+        :param guild_id: the guild that the poll is in
+        :param message_id:
+        :param channel_id:
+        :param guild_id:
+        :return:
+        """
+        sql = """SELECT time, message_id, channel_id, guild_id FROM polls
+        WHERE message_id=? AND channel_id=? AND guild_id=?"""
+        return self.execute(sql, (message_id, channel_id, guild_id))
+
     def remove_poll(self, message_id: int, channel_id: int, guild_id: int ):
         """Deletes a vote
         :param message_id: the message id of the poll

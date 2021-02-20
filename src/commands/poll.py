@@ -30,9 +30,23 @@ class Poll(commands.Cog, name='poll'):
         """
         await self.client.wait_until_ready()
 
+        polls = self.sql.get_polls()
+        now = datetime.datetime.now()
+
+        for poll in polls:
+            if not poll[0]:
+                pass  # no end time, does nothign
+            time = datetime.datetime.strptime(poll[0], '%Y-%m-%d %H:%M:%S.%f')
+            if time > now:
+                self.sched.add_job(self._end_poll, "date", run_date=time,
+                                   id=str(poll[1]) + str(poll[2]) + str(poll[3]),
+                                   args=(poll[1], poll[2], poll[3])
+                                   )
+            else:
+                await self._end_poll(poll[1], poll[2], poll[3])
+
     def _update_guild(self) -> None:
-        """
-        Updates Guilds in the database
+        """Updates Guilds in the database
         :return:
         """
         guilds = self.client.guilds
@@ -62,8 +76,11 @@ class Poll(commands.Cog, name='poll'):
         :param guild_id:
         :return:
         """
-        poll = self.sql.get_poll(message_id, channel_id, guild_id)
-        if poll: pass
+        poll = self.sql.get_poll_time(message_id, channel_id, guild_id)
+        if poll:
+            self.sql.remove_poll(message_id, channel_id, guild_id)
+            if poll[0][0]:
+                self.sched.remove_job(str(poll[0][1]) + str(poll[0][2]) + str(poll[0][3]))
 
     async def _end_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
         """Deletes the poll and outputs the channel
@@ -71,6 +88,18 @@ class Poll(commands.Cog, name='poll'):
         :param channel_id:
         :param guild_id:
         :return:
+        """
+        embed = self._count_poll(message_id, channel_id, guild_id)
+        channel = self.client.get_channel(channel_id)
+
+        await channel.send(embed=embed)
+
+    def _count_poll(self, message_id: int, channel_id: int, guild_id: int) -> object:
+        """Counts up the votes for a poll and returns the embed
+        :param message_id: message id of the poll
+        :param channel_id: channel id of the poll
+        :param guild_id: guild of the poll
+        :return: discord.Embed
         """
         poll_info = self.sql.get_poll(message_id, channel_id, guild_id)
 
@@ -90,9 +119,7 @@ class Poll(commands.Cog, name='poll'):
         self.sql.remove_poll(message_id, channel_id, guild_id)
 
         embed = discord.Embed(title=poll_info[0][0], color=discord.Color.gold(), description=description)
-        channel = self.client.get_channel(channel_id)
-
-        await channel.send(embed=embed)
+        return embed
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload) -> None:
@@ -262,6 +289,29 @@ class Poll(commands.Cog, name='poll'):
                 msg = await ctx.send('I cant send you a DM! please check your discord settings')
                 await sleep(10)
                 await msg.delete()
+
+    @commands.command(aliases=['stoppoll', 'stopoll', 'deletepoll', 'yeetpoll', "polln't"])
+    async def endpoll(self, ctx, message_id: int, dm: bool) -> None:
+        """Ends the poll and outputs the result
+        :param ctx:
+        :param message_id: the message id of the poll
+        :param dm: Whether the bot should send the results to dms
+        :return:
+        """
+        embed = self._count_poll(message_id, ctx.channel.id, ctx.author.guild.id)
+        if not dm:
+            await ctx.send(embed=embed)
+        else:
+            await ctx.author.send(embed=embed)
+
+    @endpoll.error
+    async def endpoll_error(self, ctx, error):
+        if isinstance(error, commands.errors.MissingRequiredArgument) or isinstance(error,
+                                                                                    discord.errors.DiscordException):
+            await ctx.send(
+                '`ERROR Missing Required Argument: make sure it is .deletepoll <message id> <send to dms True/False>`')
+        else:
+            print(error)
 
 
 def setup(client):
