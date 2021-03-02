@@ -157,7 +157,6 @@ class Polls(commands.Cog, name='polls'):
                 self._delete_poll(payload.message_id, payload.channel_id, payload.guild_id)
 
     @commands.command(aliases=['poll2'])
-    @commands.has_permissions(administrator=True)
     async def anonpoll(self, ctx, *, args) -> None:
         """Creates anonymous poll with optional timed ending. limit of 20 options
         :param ctx:
