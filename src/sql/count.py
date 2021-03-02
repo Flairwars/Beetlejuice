@@ -6,20 +6,17 @@ class SqlClass:
         self.database = 'datatables.db'
         sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
                                             user_id integer,
-                                            reddit_name text,
-                                            color text,
                                             PRIMARY KEY (user_id)
                                         ); """
-
+        sql_alter_users_table_reddit = """ ALTER TABLE users ADD COLUMN reddit_name text"""
+        sql_alter_users_table_color = """ ALTER TABLE users ADD COLUMN color text"""
         # create a database connection
         conn = self.create_connection(self.database)
         # create tables
         if conn is not None:
-            pass
-            # self.create_table(conn, sql_create_guilds_table)
-            # self.create_table(conn, sql_create_users_table)
-            # self.create_table(conn, sql_create_roles_table)
-            # self.create_table(conn, sql_create_user_role_table)
+            self.create_table(conn, sql_create_users_table)
+            self.create_table(conn, sql_alter_users_table_reddit)
+            self.create_table(conn, sql_alter_users_table_color)
         else:
             print("Error! cannot create the database connection.")
 
@@ -89,3 +86,23 @@ class SqlClass:
                 print(e)
 
     ############################################################
+
+    def get_reddit_color(self, reddit_name: str) -> list:
+        """Checks sql database for their color
+        :param reddit_name: the user's reddit name
+        :return: color
+        """
+        sql = """SELECT color FROM users WHERE reddit_name = ?"""
+        return self.execute(sql, (reddit_name,))
+
+    def add_user(self, discord_id: int, reddit_name: str, color: str) -> None:
+        """Adds new user to sql database
+        :param discord_id:
+        :param reddit_name:
+        :param color:
+        :return:
+        """
+        sql = """INSERT OR IGNORE INTO users (`user_id`) VALUES (?)"""
+        self.execute(sql, (discord_id,))
+        sql = """UPDATE users SET reddit_name=?, color=? WHERE user_id = ?"""
+        self.execute(sql, (reddit_name, color, discord_id))

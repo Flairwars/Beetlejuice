@@ -3,6 +3,7 @@ from sql.count import SqlClass
 from praw import Reddit
 from decouple import config
 from functools import partial
+import requests
 
 
 class Count(commands.Cog, name='counting'):
@@ -116,19 +117,30 @@ class Count(commands.Cog, name='counting'):
                     user_color = users[author]
                     page_count[user_color] += 1
                 else:
-                    # new user, color unknown
-                    #user_color = self.sql.get_user(author)  # if user color unknoqn, funct returns None
-                    user_color = None
-                    if user_color is None:
-                        user_color = author
-                        page_count[user_color] = 0
+                    # if the code hasnt seen this user, it checks the database
+                    userinfo = self.sql.get_reddit_color(author)  # if user color unknown, funct returns empty list
+                    if userinfo:
+                        user_color = userinfo[0][0]
+                    else:
+                        # if the user isnt in the database, it checks the api
+                        url = f'https://api.flairwars.com/users?RedditUsername={author}'
+                        header = {"accept": "application/json"}
+                        r = requests.get(url, headers=header)
+                        userinfo = r.json()
+                        if userinfo:
+                            # print(userinfo)
+                            user_color = userinfo[0]['FlairwarsColor']
+                            self.sql.add_user(userinfo[0]['DiscordMemberID'], author, userinfo[0]['FlairwarsColor'])
+                        else:
+                            user_color = author
+                            page_count[user_color] = 0
 
                     page_count[user_color] += 1
                     users[author] = user_color
             count.append(page_count)
         # count = [{color posts per page},{},{}]
 
-        response = f'**Situation over on {sub[1]}**'
+        response = f'**Situation over on {sub[1].capitalize()}**'
 
         for page in range(0, 5):
             response += f'\n**Page {page + 1}**\n'
