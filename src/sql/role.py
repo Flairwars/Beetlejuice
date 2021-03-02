@@ -9,13 +9,18 @@ class SqlClass:
         sql_create_guilds_table = """CREATE TABLE IF NOT EXISTS guilds (
                                             guild_id integer PRIMARY KEY
                                         );"""
-        sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
-                                            user_id integer,
-                                            guild_id integer,
-                                            FOREIGN KEY (guild_id) REFERENCES guilds (guild_id) 
-                                                ON DELETE CASCADE ON UPDATE CASCADE,
-                                            PRIMARY KEY (user_id, guild_id)
-                                        ); """
+        sql_create_users_table = """CREATE TABLE IF NOT EXISTS users (
+                                                            user_id integer PRIMARY KEY
+                                                        );"""
+        sql_create_user_guilds_table = """ CREATE TABLE IF NOT EXISTS user_guilds (
+                                                            user_id integer,
+                                                            guild_id integer,
+                                                            FOREIGN KEY (guild_id) REFERENCES guilds (guild_id) 
+                                                                ON DELETE CASCADE ON UPDATE CASCADE,
+                                                            FOREIGN KEY (user_id) REFERENCES users (user_id) 
+                                                                ON DELETE CASCADE ON UPDATE CASCADE,
+                                                            PRIMARY KEY (user_id, guild_id)
+                                                        ); """
         sql_create_roles_table = """ CREATE TABLE IF NOT EXISTS roles (
                                             role_id integer,
                                             guild_id integer,
@@ -29,7 +34,7 @@ class SqlClass:
                                             guild_id integer,
                                             FOREIGN KEY (role_id, guild_id) REFERENCES roles (role_id, guild_id) 
                                                 ON UPDATE CASCADE ON DELETE CASCADE,
-                                            FOREIGN KEY (user_id, guild_id) REFERENCES users (user_id, guild_id) 
+                                            FOREIGN KEY (user_id, guild_id) REFERENCES user_guilds (user_id, guild_id) 
                                                 ON UPDATE CASCADE ON DELETE CASCADE,
                                             PRIMARY KEY (user_id, role_id, guild_id)
                                         ); """
@@ -41,6 +46,7 @@ class SqlClass:
             conn.execute("PRAGMA foreign_keys = ON")
             self.create_table(conn, sql_create_guilds_table)
             self.create_table(conn, sql_create_users_table)
+            self.create_table(conn, sql_create_user_guilds_table)
             self.create_table(conn, sql_create_roles_table)
             self.create_table(conn, sql_create_user_role_table)
         else:
@@ -212,28 +218,7 @@ class SqlClass:
         :param guild_id: the id of the current discord server
         :return:
         """
-        sql = """INSERT OR IGNORE INTO users (`user_id`,`guild_id`) VALUES (?,?)"""
+        sql = """INSERT OR IGNORE INTO users (`user_id`) VALUES (?)"""
+        self.execute(sql, (user_id,))
+        sql = """INSERT OR IGNORE INTO user_guilds (`user_id`,`guild_id`) VALUES (?,?)"""
         self.execute(sql, (user_id, guild_id))
-
-
-'''
-    def get_user(self, user_id: int, guild_id: int) -> list:
-        """Gets user's id from server
-        :param user_id: the user's id
-        :param guild_id: the id of the discord server
-        :return: the user's id or nothing
-        """
-        sql = """SELECT user_id FROM users WHERE user_id=? AND guild_id=?"""
-        return self.execute(sql, (user_id, guild_id))
-    
-
-    def update_guild(self, guilds: list):
-        """
-        Adds guild to server if the guild does not exist
-        :param guilds:
-        :return:
-        """
-        sql = """INSERT or IGNORE INTO guilds (`guild_id`) VALUES (?)"""
-        parms = [(guild, ) for guild in guilds]
-        self.execute_many(sql, parms)
-'''
