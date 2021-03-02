@@ -9,10 +9,15 @@ class SqlClass:
         sql_create_guilds_table = """CREATE TABLE IF NOT EXISTS guilds (
                                                     guild_id integer PRIMARY KEY
                                                 );"""
-        sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
+        sql_create_users_table = """CREATE TABLE IF NOT EXISTS users (
+                                                    user_id integer PRIMARY KEY
+                                                );"""
+        sql_create_user_guilds_table = """ CREATE TABLE IF NOT EXISTS user_guilds (
                                                     user_id integer,
                                                     guild_id integer,
                                                     FOREIGN KEY (guild_id) REFERENCES guilds (guild_id) 
+                                                        ON DELETE CASCADE ON UPDATE CASCADE,
+                                                    FOREIGN KEY (user_id) REFERENCES users (user_id) 
                                                         ON DELETE CASCADE ON UPDATE CASCADE,
                                                     PRIMARY KEY (user_id, guild_id)
                                                 ); """
@@ -46,7 +51,7 @@ class SqlClass:
                                             FOREIGN KEY (emote_id, message_id, channel_id, guild_id)
                                                 REFERENCES options (emote_id, message_id, channel_id, guild_id)
                                                 ON DELETE CASCADE ON UPDATE CASCADE,
-                                            FOREIGN KEY (user_id, guild_id) REFERENCES users (user_id, guild_id) 
+                                            FOREIGN KEY (user_id, guild_id) REFERENCES user_guilds (user_id, guild_id) 
                                                 ON UPDATE CASCADE ON DELETE CASCADE,
                                             PRIMARY KEY (user_id, emote_id, message_id, channel_id, guild_id)
                                         ); """
@@ -58,6 +63,7 @@ class SqlClass:
             conn.execute("PRAGMA foreign_keys = ON")
             self.create_table(conn, sql_create_guilds_table)
             self.create_table(conn, sql_create_users_table)
+            self.create_table(conn, sql_create_user_guilds_table)
             self.create_table(conn, sql_create_polls_table)
             self.create_table(conn, sql_create_options_table)
             self.create_table(conn, sql_create_votes_table)
@@ -236,7 +242,9 @@ class SqlClass:
         :param guild_id: the id of the current discord server
         :return:
         """
-        sql = """INSERT OR IGNORE INTO users (`user_id`,`guild_id`) VALUES (?,?)"""
+        sql = """INSERT OR IGNORE INTO users (`user_id`) VALUES (?)"""
+        self.execute(sql, (user_id,))
+        sql = """INSERT OR IGNORE INTO user_guilds (`user_id`,`guild_id`) VALUES (?,?)"""
         self.execute(sql, (user_id, guild_id))
 
     def add_vote(self, user_id: int, emote_id: str, message_id: int, channel_id: int, guild_id: int) -> None:
