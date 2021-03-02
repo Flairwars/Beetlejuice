@@ -4,7 +4,7 @@ from praw import Reddit
 from decouple import config
 from functools import partial
 import requests
-
+import discord
 
 class Count(commands.Cog, name='counting'):
     """
@@ -150,6 +150,14 @@ class Count(commands.Cog, name='counting'):
                                                                                                                    "\~")
 
         await msg.edit(content=response)
+
+    @count.error
+    async def _count(self, error, ctx):
+        if isinstance(error, commands.errors.MissingRequiredArgument) or isinstance(error,
+                                                                                    discord.errors.DiscordException):
+            await ctx.send('`ERROR Missing Required Argument: .count yellow`')
+        else:
+            await ctx.send(f'`ERROR: {type(error), error}`')
 
 
 def setup(client):
