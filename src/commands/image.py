@@ -5,17 +5,47 @@ import discord
 import aiohttp
 import re
 import io
+import random
+from os import listdir
 
 
 class ImageEditing(commands.Cog, name='image'):
     """
     Image editing
     """
-
     def __init__(self, client):
         self.client = client
-        self.msgLimit = 25
-        self.reg = re.compile(r'https?:/.*\.(png|jpg|jpeg|gif|jfif|bmp)')
+
+    @staticmethod
+    async def FindImage(ctx: object) -> bytes or None:
+        """finds a discord image
+        :param ctx:
+        :return:
+        :return:
+        """
+        reg = re.compile(r'https?:/.*\.(png|jpg|jpeg|gif|jfif|bmp)')
+
+        if ctx.message.attachments:
+            data = await ctx.message.attachments[0].read()
+        else:
+            async for msg in ctx.channel.history(limit=25):
+                # loop through x messages
+                file_url = msg.attachments[0].url if msg.attachments else ''
+
+                message_url = reg.search(msg.content)
+                message_url = message_url.group(0) if message_url else ''
+
+                # print(file_url, message_url)
+                if reg.match(file_url) or message_url:  # self.reg to check for images in links
+                    url = file_url if file_url else message_url
+                    # found attachment with image file format
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(url) as response:
+                            data = await response.read()
+                    break
+            else:
+                return None
+        return data
 
     @staticmethod
     def ProcessRecolor(img: object, color: tuple, strength: float) -> object:
@@ -80,38 +110,21 @@ class ImageEditing(commands.Cog, name='image'):
             rgb = ImageColor.getrgb(color)
             addition_colors[color] = (rgb[0], rgb[1], rgb[2], 0)
 
+        # finding image
         bot_msg = await ctx.send('`Editing images`')
-        async with ctx.typing():
-            if ctx.message.attachments:
-                data = await ctx.message.attachments[0].read()
-            else:
-                async for msg in ctx.channel.history(limit=self.msgLimit):
-                    # loop through x messages
-                    if msg.attachments:
-                        file_url = msg.attachments[0].url
-                    else:
-                        file_url = ''
 
-                    message_url = self.reg.search(msg.content)
-                    if message_url:
-                        message_url = message_url.group(0)
+        data = await self.FindImage(ctx)
+        if data is None:
+            return await bot_msg.edit(content='`No image found`')
 
-                    # print(file_url, message_url)
-                    if self.reg.match(file_url) or message_url:  # self.reg to check for images in links
-                        url = file_url if file_url else message_url
-                        # found attachment with image file format
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(url) as response:
-                                data = await response.read()
-                        break
-                else:
-                    await bot_msg.edit(content='`No image found`')
-                    return
+        await bot_msg.edit(content='`Image found!`')
 
-            await bot_msg.edit(content='`Image found!`')
-            img = Image.open(io.BytesIO(data))
-            img = img.convert('RGBA')  # In case image (e.g. JPG) is in 'RGB' or else mode.
+        # opens and converts to correct file type
+        img = Image.open(io.BytesIO(data))
+        img = img.convert('RGBA')
 
+        async with ctx.typing():  # typing to show code is working
+            # runs in parallel to other code to prevent input output blocking
             fn = partial(self.ProcessRecolor, img, addition_colors[color], strength)
             img = await self.client.loop.run_in_executor(None, fn)
 
@@ -138,11 +151,107 @@ class ImageEditing(commands.Cog, name='image'):
             await ctx.send('`ERROR: invalid color`')
         else:
             await ctx.send('`ERROR: something went wrong`')
-        print(error)
 
-    @commands.command(alieses=['bee'])
-    async def beeify(self, ctx):
-        await ctx.send('ping')
+    @staticmethod
+    def ProcessBee(img: Image, beecount: int, width: int, height: int):
+        """Adds bee pngs to an image
+        :param img:
+        :param beecount:
+        :param width:
+        :param height:
+        :return:
+        """
+        for n in range(beecount):
+            bee = random.choice(listdir('./data'))
+            beeimage = Image.open(f"./data/{bee}")
+            beeimage = beeimage.convert('RGBA')
+
+            scale = 0.20 + (random.random() - 0.5) * 0.2
+            ratio = beeimage.size[1] / beeimage.size[0]
+            beewidth = beeimage.size[0] * scale
+            beeheight = abs(round(ratio * beewidth))
+            beewidth = abs(round(beewidth))
+
+            beeimage = beeimage.resize((beewidth, beeheight))
+
+            rwidth = random.randint(0, abs(width - beeimage.size[0]))
+            rhight = random.randint(0, abs(height - beeimage.size[1]))
+
+            img.alpha_composite(beeimage, (rwidth, rhight))
+        return img
+
+    @commands.command(aliases=['bee'])
+    async def beeify(self, ctx, beecount: int = 10):
+        """Makes image bee-ier. searches up to 25 messages into the history for an image
+        :param ctx:
+        :param beecount: The number of bees that are added to an image. optional
+        :return: a new and improved image with bees
+        """
+        if beecount > 10000:
+            raise discord.errors.DiscordException
+
+        bot_msg = await ctx.send('`Editing images`')
+
+        data = await self.FindImage(ctx)
+        if data is None:
+            return await bot_msg.edit(content='`No image found`')
+
+        await bot_msg.edit(content='`Image found!`')
+
+        # opens and converts to correct file type
+        img = Image.open(io.BytesIO(data))
+        img = img.convert('RGBA')
+        width = img.size[0]
+        height = img.size[1]
+
+        async with ctx.typing():  # typing to show code is working
+            # runs in parallel to other code to prevent input output blocking
+            fn = partial(self.ProcessBee, img, beecount, width, height)
+            img = await self.client.loop.run_in_executor(None, fn)
+
+            # Send image to discord without saving to file
+            img_bytes_arr = io.BytesIO()
+            img.save(img_bytes_arr, format='PNG')
+            img_bytes_arr.seek(0)
+            f = discord.File(img_bytes_arr, 'bee.png')
+
+        await ctx.send(f'`bee`', file=f)
+        await bot_msg.delete()
+
+    @beeify.error
+    async def _beeify(self, ctx: object, error: object):
+        """
+        Error output for beeify
+        :param ctx:
+        :param error:
+        :return: Error message
+        """
+        if isinstance(error, commands.errors.BadArgument):
+            await ctx.send('`ERROR: invalid args <number of bees> <optional url>`')
+        elif isinstance(error, discord.errors.DiscordException):
+            await ctx.send('`ERROR: too many bees`')
+        else:
+            await ctx.send(f'`ERROR: {error}`')
+
+    @commands.command(aliases=['avatar'])
+    async def pfp(self, ctx, *, member: discord.Member = None):
+        """Gets your pfp or pfp of another
+        :param ctx:
+        :param member: optional. the user who's pfp you want to see
+        :return: embed with pfp
+        """
+        url = ctx.author.avatar_url if member is None else member.avatar_url
+        embed = discord.Embed(color=discord.Color.gold())
+        embed.set_image(url=url)
+
+        await ctx.send(embed=embed)
+
+    @pfp.error
+    async def _pfp(self, ctx, error):
+        if isinstance(error, commands.errors.MemberNotFound):
+            await ctx.send('`ERROR: member not found`')
+        else:
+            print(error)
 
 
 def setup(client):
