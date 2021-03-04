@@ -187,7 +187,7 @@ class ImageEditing(commands.Cog, name='image'):
         :param beecount: The number of bees that are added to an image. optional
         :return: a new and improved image with bees
         """
-        if beecount > 10000:
+        if beecount > 1000:
             raise discord.errors.DiscordException
 
         bot_msg = await ctx.send('`Editing images`')
