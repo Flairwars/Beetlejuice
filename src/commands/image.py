@@ -45,7 +45,21 @@ class ImageEditing(commands.Cog, name='image'):
                     break
             else:
                 return None
-        return data
+            # opens and converts to correct file type
+        img = Image.open(io.BytesIO(data))
+        img = img.convert('RGBA')
+        width = img.size[0]
+        height = img.size[1]
+        maxpixels = 2097152
+        imgpixels = width * height
+
+        if imgpixels >= maxpixels:
+            # If the image is larger than 8mb resizes
+            constg = height / width
+            width = round((maxpixels / constg) ** 0.5)
+            height = round(width * constg)
+            img = img.resize((width, height))
+        return img
 
     @staticmethod
     def ProcessRecolor(img: object, color: tuple, strength: float) -> object:
@@ -113,15 +127,11 @@ class ImageEditing(commands.Cog, name='image'):
         # finding image
         bot_msg = await ctx.send('`Editing images`')
 
-        data = await self.FindImage(ctx)
-        if data is None:
+        img = await self.FindImage(ctx)
+        if img is None:
             return await bot_msg.edit(content='`No image found`')
 
         await bot_msg.edit(content='`Image found!`')
-
-        # opens and converts to correct file type
-        img = Image.open(io.BytesIO(data))
-        img = img.convert('RGBA')
 
         async with ctx.typing():  # typing to show code is working
             # runs in parallel to other code to prevent input output blocking
@@ -187,22 +197,18 @@ class ImageEditing(commands.Cog, name='image'):
         :param beecount: The number of bees that are added to an image. optional
         :return: a new and improved image with bees
         """
-        if beecount > 10000:
+        if beecount > 1000:
             raise discord.errors.DiscordException
 
         bot_msg = await ctx.send('`Editing images`')
 
-        data = await self.FindImage(ctx)
-        if data is None:
+        img = await self.FindImage(ctx)
+        if img is None:
             return await bot_msg.edit(content='`No image found`')
 
         await bot_msg.edit(content='`Image found!`')
 
-        # opens and converts to correct file type
-        img = Image.open(io.BytesIO(data))
-        img = img.convert('RGBA')
-        width = img.size[0]
-        height = img.size[1]
+
 
         async with ctx.typing():  # typing to show code is working
             # runs in parallel to other code to prevent input output blocking
