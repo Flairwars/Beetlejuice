@@ -59,7 +59,9 @@ class ImageEditing(commands.Cog, name='image'):
             width = round((maxpixels / constg) ** 0.5)
             height = round(width * constg)
             img = img.resize((width, height))
-        return img
+            width = img.size[0]
+            height = img.size[1]
+        return img, width, height
 
     @staticmethod
     def ProcessRecolor(img: object, color: tuple, strength: float) -> object:
@@ -127,7 +129,7 @@ class ImageEditing(commands.Cog, name='image'):
         # finding image
         bot_msg = await ctx.send('`Editing images`')
 
-        img = await self.FindImage(ctx)
+        img, width, height = await self.FindImage(ctx)
         if img is None:
             return await bot_msg.edit(content='`No image found`')
 
@@ -202,7 +204,7 @@ class ImageEditing(commands.Cog, name='image'):
 
         bot_msg = await ctx.send('`Editing images`')
 
-        img = await self.FindImage(ctx)
+        img,width,height = await self.FindImage(ctx)
         if img is None:
             return await bot_msg.edit(content='`No image found`')
 
@@ -224,7 +226,7 @@ class ImageEditing(commands.Cog, name='image'):
         await ctx.send(f'`bee`', file=f)
         await bot_msg.delete()
 
-    @beeify.error
+    ''''@beeify.error
     async def _beeify(self, ctx: object, error: object):
         """
         Error output for beeify
@@ -237,7 +239,7 @@ class ImageEditing(commands.Cog, name='image'):
         elif isinstance(error, discord.errors.DiscordException):
             await ctx.send('`ERROR: too many bees`')
         else:
-            await ctx.send(f'`ERROR: {error}`')
+            await ctx.send(f'`ERROR: {error}`')'''
 
     @commands.command(aliases=['avatar'])
     async def pfp(self, ctx, *, member: discord.Member = None):
