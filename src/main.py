@@ -3,11 +3,6 @@ from decouple import config
 from discord import Intents
 import os
 
-#setting up cppinclude
-#included here for library structure reasons
-import cppimport.import_hook
-import colorapp
-
 # add discord bot perms
 intents = Intents.default()
 intents.presences = True
