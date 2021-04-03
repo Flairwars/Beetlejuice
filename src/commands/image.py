@@ -8,10 +8,6 @@ import io
 import random
 from os import listdir
 
-#cpp stuff MOVED TO MAIN.PY TO SIMPLIFY LIBRARY STRUCTURE
-#import cppimport.import_hook
-#import colorapp.cpp
-
 
 class ImageEditing(commands.Cog, name='image'):
     """
@@ -76,21 +72,24 @@ class ImageEditing(commands.Cog, name='image'):
         :param strength:
         :return:
         """
-        for i in range(0, img.size[0]):  # process all pixels
-            for j in range(0, img.size[1]):
-                pixel_data = img.getpixel((i, j))
+        # ORIGINAL PYTHON-BASED RECOLOR
+        # for i in range(0, img.size[0]):  # process all pixels
+        #     for j in range(0, img.size[1]):
+        #         pixel_data = img.getpixel((i, j))
+        #
+        #         # NewValue = ((OldValue/255)*(1-strength)) + ((Recolor/255)*strength)
+        #         new_color = [
+        #             abs(round(
+        #                 ((pixel_data[n] / 255) * (1 - strength) + (color[n] / 255) * strength) * 255
+        #             )) for n in range(3)
+        #         ]
+        #
+        #         new_color.append(pixel_data[3])
+        #         new_color = tuple(new_color)
+        #
+        #         img.putpixel((i, j), new_color)
 
-                # NewValue = ((OldValue/255)*(1-strength)) + ((Recolor/255)*strength)
-                new_color = [
-                    abs(round(
-                        ((pixel_data[n] / 255) * (1 - strength) + (color[n] / 255) * strength) * 255
-                    )) for n in range(3)
-                ]
-
-                new_color.append(pixel_data[3])
-                new_color = tuple(new_color)
-
-                img.putpixel((i, j), new_color)
+        img.fromarray(colorapp.recolor(list(img.getdata())))
 
         return img
 
