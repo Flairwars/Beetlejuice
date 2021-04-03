@@ -8,6 +8,10 @@ import io
 import random
 from os import listdir
 
+#cpp stuff
+import cppimport.import_hook
+import colorapp.cpp
+
 
 class ImageEditing(commands.Cog, name='image'):
     """
