@@ -155,6 +155,7 @@ class ImageEditing(commands.Cog, name='image'):
         await ctx.send(f'`{color}@{int(strength * 100)}%`', file=f)
         await bot_msg.delete()
 
+    ```
     @recolor.error
     async def _recolor(self, ctx: object, error: object):
         """
@@ -169,7 +170,7 @@ class ImageEditing(commands.Cog, name='image'):
             await ctx.send('`ERROR: invalid color`')
         else:
             await ctx.send('`ERROR: something went wrong`')
-
+    ```
     @staticmethod
     def ProcessBee(img: Image, beecount: int, width: int, height: int):
         """Adds bee pngs to an image
