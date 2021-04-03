@@ -11,11 +11,8 @@ namespace py = pybind11;
 
 
 //threaded function that takes and returns std::list<std::tuple<int>>
-std::list<std::tuple<int>> recolor_thread(std::list<std::tuple<int>> img, int height; int width, std::vector<int> rgb, float intensity){
+std::list<std::tuple<int>> recolor_thread(std::list<std::tuple<int>> img, int height; int width, std::tuple<int> rgb, float intensity){
     //recolor and manage return
-
-    intensity/=100;
-
     for(type_t i=0; i<=height*width; i++){
         for(type_t j=0; j<3; j++){
             img[i][j]=round(img[i][j] * (1-intensity) + rgb[j] * intensity);

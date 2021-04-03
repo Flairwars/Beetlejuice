@@ -64,10 +64,12 @@ class ImageEditing(commands.Cog, name='image'):
         return img, width, height
 
     @staticmethod
-    def ProcessRecolor(img: object, color: tuple, strength: float) -> object:
+    def ProcessRecolor(img, height, width, color: tuple, strength: float):
         """
         Background Recolor Processing
         :param img:
+        :param height:
+        :param width:
         :param color:
         :param strength:
         :return:
@@ -90,7 +92,7 @@ class ImageEditing(commands.Cog, name='image'):
         #         img.putpixel((i, j), new_color)
 
         #call imported cpp function
-        img.fromarray(colorapp.recolor(list(img.getdata()), ))
+        img.fromarray(colorapp.recolor(list(img.getdata()), height, width, color, strength))
 
         return img
 
@@ -141,7 +143,7 @@ class ImageEditing(commands.Cog, name='image'):
 
         async with ctx.typing():  # typing to show code is working
             # runs in parallel to other code to prevent input output blocking
-            fn = partial(self.ProcessRecolor, img, addition_colors[color], strength)
+            fn = partial(self.ProcessRecolor, img, height, width, addition_colors[color], strength)
             img = await self.client.loop.run_in_executor(None, fn)
 
             # Send image to discord without saving to file
