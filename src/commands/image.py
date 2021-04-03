@@ -89,7 +89,8 @@ class ImageEditing(commands.Cog, name='image'):
         #
         #         img.putpixel((i, j), new_color)
 
-        img.fromarray(colorapp.recolor(list(img.getdata())))
+        #call imported cpp function
+        img.fromarray(colorapp.recolor(list(img.getdata()), ))
 
         return img
 
