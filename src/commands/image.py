@@ -7,6 +7,7 @@ import re
 import io
 import random
 from os import listdir
+import numpy as np
 
 
 class ImageEditing(commands.Cog, name='image'):
@@ -91,8 +92,12 @@ class ImageEditing(commands.Cog, name='image'):
         #
         #         img.putpixel((i, j), new_color)
 
-        #call imported cpp function
-        img.fromarray(colorapp.recolor(list(img.getdata()), height, width, color, strength))
+        #convert to np array
+        img = np.array(img)
+        #recolor
+        img = colorapp.recolor(img, height, width, color, strength)
+        #convert back into pil image
+        img = pil.fromarray(img)
 
         return img
 
