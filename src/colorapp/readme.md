@@ -1,8 +1,10 @@
 compile and wrap with tbenthompson/cppimport and pybind11, which creates an importable python library
 
-**TODO** pybind11 included as git submodule in <rootdir>/src/colorapp/pybind11
+pybind11 included as git submodule in <rootdir>/src/colorapp/pybind11
 
 **TODO** add `pip install cppimport` somewhere relevant
+
+**TODO** add c++ file location to python include path
 
 **NOTE: code cannot be compiled yet**
 ## In python code
