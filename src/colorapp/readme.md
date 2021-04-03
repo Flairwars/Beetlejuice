@@ -7,6 +7,8 @@ pybind11 included as git submodule in <rootdir>/src/colorapp/pybind11
 **TODO** add c++ file location to python include path
 
 ## In python code
+
+Add c++ file location to python include path. Then import:
 ```python
 import cppimport.import_hook
 import colorapp.cpp
