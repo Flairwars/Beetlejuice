@@ -27,7 +27,7 @@ std::list<std::tuple<int>> recolor_thread(std::list<std::tuple<int>> img, int he
 
 PYBIND11_MODULE(recolor, m){
     m.doc() = "Python interface calling cpp to recolor. See src/colorapp/readme.md for details.";
-    m.def("recolor", &recolor_thread, "Function calling (non-threaded) recoloring.")
+    m.def("recolor", &recolor_thread, "Function calling (non-threaded) recoloring.");
 }
 
 <%
