@@ -11,7 +11,7 @@ pybind11 included as git submodule in <rootdir>/src/colorapp/pybind11
 import cppimport.import_hook
 import colorapp.cpp
 ```
-Then call ``output=colorapp.recolor(params)``. Imported c++ code will compile on launch and.
+Then call ``output=colorapp.recolor(params)``. C++ code will compile on launch when imported and appear as a python module.
 
 #### Expected inputs:
 1. flattened list of pixel value tuples in an RGBA order and format, created using `list(Image.getdata())`
