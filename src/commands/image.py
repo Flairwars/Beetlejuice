@@ -13,6 +13,8 @@ import numpy as np
 import cppimport.import_hook
 import colorapp
 
+
+
 class ImageEditing(commands.Cog, name='image'):
     """
     Image editing
@@ -78,7 +80,7 @@ class ImageEditing(commands.Cog, name='image'):
         :param strength:
         :return:
         """
-        # ORIGINAL PYTHON-BASED RECOLOR
+        # ORIGINAL PYTHON-BASED RECOLOR, uncomment and comment out cpp based if recolor is broken
         # for i in range(0, img.size[0]):  # process all pixels
         #     for j in range(0, img.size[1]):
         #         pixel_data = img.getpixel((i, j))
@@ -95,12 +97,7 @@ class ImageEditing(commands.Cog, name='image'):
         #
         #         img.putpixel((i, j), new_color)
 
-        #convert to np array
-        img = np.array(img)
-        #recolor
-        img = colorapp.recolor(img, height, width, color, strength)
-        #convert back into pil image
-        img = pil.fromarray(img)
+        img = Image.frombytes('RGBA', img.size, colorapp.recolor(img.tobytes(), height, width, color[0], color[1], color[2], strength))
 
         return img
 
