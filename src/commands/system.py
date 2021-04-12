@@ -8,7 +8,6 @@ class System(commands.Cog, name='System commands'):
     """
     system commands
     """
-
     def __init__(self, client: object):
         self.client = client
         self.sql = SqlClass()
