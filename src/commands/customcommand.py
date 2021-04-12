@@ -1,15 +1,33 @@
+import traceback
 from discord.ext import commands
+
+
+def is_private_command():
+    async def predicate(ctx):
+        return ctx.guild.id == 798298345177088022
+
+    return commands.check(predicate)
 
 
 def main(client, command_name, response):
     class commandTemplate(commands.Cog, name='Custom commands'):
-        def __init__(self, client, response):
+        def __init__(self, client, response, description=""):
             self.client = client
             self.response = response
+            self.description = description
 
         @commands.command(name=command_name)
+        @is_private_command()
         async def custom_command(self, ctx):
+            f"""
+            {self.description}
+            """
             await ctx.send(self.response)
+
+        @custom_command.error
+        async def _custom_command(self, ctx: object, error: object):
+            if not isinstance(error, commands.errors.CheckFailure):
+                traceback.print_exc()
 
     client.add_cog(commandTemplate(client, response))
 
