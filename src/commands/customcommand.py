@@ -26,6 +26,11 @@ class customCommand(commands.Cog, name='Custom commands'):
         main(self.client, command_name, response)
         await ctx.send("work")
 
+    @commands.command()
+    async def uc(self, ctx, command_name):
+        self.client.remove_command(command_name)
+        await ctx.send("work")
+
 
 def setup(client):
     client.add_cog(customCommand(client))
