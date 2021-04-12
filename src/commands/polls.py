@@ -29,7 +29,6 @@ class Polls(commands.Cog, name='polls'):
         :return:
         """
         await self.client.wait_until_ready()
-        self._update_guild()
         polls = self.sql.get_polls()
         now = datetime.datetime.now()
 
@@ -45,30 +44,6 @@ class Polls(commands.Cog, name='polls'):
                                        )
                 else:
                     await self._end_poll(poll[1], poll[2], poll[3])
-
-    def _update_guild(self) -> None:
-        """Updates Guilds in the database
-        :return:
-        """
-        guilds = self.client.guilds
-        guilds = [guild.id for guild in guilds]
-
-        db_guilds = self.sql.get_guilds()
-        db_guilds = [db_guilds[0] for db_guilds in db_guilds]
-
-        lst = []
-        for guild in guilds:
-            if guild not in db_guilds:
-                lst.append(guild)
-
-        self.sql.add_guilds(lst)
-
-        lst = []
-        for db_guild in db_guilds:
-            if db_guild not in guilds:
-                lst.append(db_guild)
-
-        self.sql.remove_guilds(lst)
 
     def _delete_poll(self, message_id: int, channel_id: int, guild_id: int) -> None:
         """Deletes the poll
@@ -90,7 +65,6 @@ class Polls(commands.Cog, name='polls'):
         :param guild_id: guild id of the poll
         :return:
         """
-        self._update_guild()
         embed = self._count_poll(message_id, channel_id, guild_id)
         channel = self.client.get_channel(channel_id)
 
@@ -227,7 +201,6 @@ class Polls(commands.Cog, name='polls'):
         await msg.edit(embed=embed)
 
         # SQL Setup
-        self._update_guild()
         self.sql.add_poll(msg.id, msg.channel.id, msg.author.guild.id, name, time)
         self.sql.add_options(msg.id, msg.channel.id, msg.author.guild.id, self.pollsigns, args)
         # Background task

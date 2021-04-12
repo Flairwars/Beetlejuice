@@ -7,7 +7,8 @@ class SqlClass:
         self.database = 'datatables.db'
 
         sql_create_guilds_table = """CREATE TABLE IF NOT EXISTS guilds (
-                                            guild_id integer PRIMARY KEY
+                                            guild_id integer PRIMARY KEY,
+                                            prefix text
                                         );"""
         sql_create_discord_users_table = """CREATE TABLE IF NOT EXISTS discord_users (
                                                             discord_id integer PRIMARY KEY
@@ -150,36 +151,6 @@ class SqlClass:
         """
         sql = """DELETE FROM roles WHERE role_id = ? AND guild_id = ?"""
         parms = [(role, guild_id) for role in roles]
-        self.execute_many(sql, parms)
-
-    ############################################################
-
-    def get_guilds(self) -> list:
-        """
-        Gets all the guilds recorded on the discord bot
-        :return: a tuple of all the discord server ids
-        """
-        sql = """SELECT guild_id FROM guilds"""
-        return self.execute(sql)
-
-    def add_guilds(self, guilds: list) -> None:
-        """
-        Adds multiple guilds to the db
-        :param guilds: A list of new guilds
-        :return:
-        """
-        sql = """INSERT INTO guilds (`guild_id`) VALUES (?)"""
-        parms = [(guild, ) for guild in guilds]
-        self.execute_many(sql, parms)
-
-    def remove_guilds(self, guilds: list) -> None:
-        """
-        Remove multiple guilds to the db
-        :param guilds: A list of old guilds
-        :return:
-        """
-        sql = """DELETE FROM guilds WHERE guild_id = ?"""
-        parms = [(guild, ) for guild in guilds]
         self.execute_many(sql, parms)
 
     ############################################################
