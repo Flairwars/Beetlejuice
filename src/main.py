@@ -2,6 +2,15 @@ from discord.ext import commands
 from decouple import config
 from discord import Intents
 import os
+from os import path
+import sys
+
+#generate path of colorapp
+colorapp_path = path.abspath("colorapp")
+
+#add colorapp to include path
+if not colorapp_path in sys.path:
+	sys.path.append(colorapp_path)
 
 # add discord bot perms
 intents = Intents.default()
