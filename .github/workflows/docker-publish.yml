@@ -13,6 +13,7 @@ jobs:
         -
             name: Checkout
             uses: actions/checkout@v1
+            submodules: true | recursive
         -
             name: Dockerhub login
             env:
@@ -28,7 +29,6 @@ jobs:
                 version: latest
         -
             name: Build dockerfile (with push)
-            submodules: true | recursive
             run: |
                 docker buildx build \
                 --platform=linux/amd64,linux/arm/v6,linux/arm64 \
