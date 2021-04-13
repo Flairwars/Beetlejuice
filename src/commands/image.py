@@ -7,7 +7,6 @@ import re
 import io
 import random
 from os import listdir
-import numpy as np
 
 #import hook, tell cppimport to compile colorapp
 import cppimport.import_hook
