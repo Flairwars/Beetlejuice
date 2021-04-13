@@ -6,6 +6,7 @@ from functools import partial
 import requests
 import discord
 
+
 class Count(commands.Cog, name='counting'):
     """
     Counts different subreddits
