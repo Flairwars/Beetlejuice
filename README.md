@@ -1,3 +1,4 @@
 # Beetlejuice 
-A python bot written for Flairwars' Yellow!
  ======
+A python bot written for Flairwars' Yellow!
+
