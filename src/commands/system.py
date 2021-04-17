@@ -1,15 +1,25 @@
 from time import time
 from discord.ext import commands
 import git
+from sql.prefix import SqlClass
 
 
 class System(commands.Cog, name='System commands'):
     """
     system commands
     """
-
     def __init__(self, client: object):
         self.client = client
+        self.sql = SqlClass()
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def setprefix(self, ctx, prefix):
+        """
+        update prefix for the discord server
+        """
+        self.sql.change_prefix(ctx.guild.id, prefix)
+        await ctx.send(f"Updated prefix to: {prefix}")
 
     @commands.command()
     async def ping(self, ctx: object):
