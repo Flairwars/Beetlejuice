@@ -2,7 +2,7 @@ from discord.errors import DiscordException
 from discord.ext import commands
 from discord.utils import get
 import discord
-from sql.role import SqlClass # BITCH STOP COMPLAING YOU LITEREALYL WORK. DUMB ASS PROGRAMM
+from sql.role import SqlClass
 
 
 class Role(commands.Cog, name='role'):
