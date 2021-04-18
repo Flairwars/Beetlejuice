@@ -8,22 +8,22 @@ import sys
 
 from sql.prefix import SqlClass
 
-#generate path of colorapp
+# generate path of colorapp
 colorapp_path = path.abspath("colorapp")
 
-#add colorapp to include path
-if not colorapp_path in sys.path:
-	sys.path.append(colorapp_path)
-
+# add colorapp to include path
+if colorapp_path not in sys.path:
+    sys.path.append(colorapp_path)
 
 # add discord bot perms
 intents = Intents.default()
 intents.presences = True
 intents.members = True
 
-
 # prefix
 sql = SqlClass()
+
+
 def get_prefix(client, message): return sql.get_prefix(message.guild.id)[0][0]
 
 
