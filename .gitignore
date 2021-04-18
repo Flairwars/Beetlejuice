@@ -300,3 +300,6 @@ fabric.properties
 # CodeStream plugin
 # https://plugins.jetbrains.com/plugin/12206-codestream
 .idea/codestream.xml
+
+# C++ compiled file
+src/colorapp/.rendered.colorapp.cpp
