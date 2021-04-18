@@ -11,23 +11,24 @@ def is_private_command():
         if guild_id:
             return ctx.guild.id == sql.get_command_guild(ctx.command.name)[0][0]
         return False
-
     return commands.check(predicate)
 
 
 def main(client, command_name, response):
-    class commandTemplate(commands.Cog, name='Custom commands'):
-        def __init__(self, client, response, description=""):
+    class Commandtemplate(commands.Cog, name='Custom commands'):
+        def __init__(self, client, response):
             self.client = client
+            self.command_name = command_name
             self.response = response
-            self.description = description
+            self.sql = SqlClass()
 
         @commands.command(name=command_name)
         @is_private_command()
-        async def custom_command(self, ctx):
+        async def custom_command(self, ctx, *args):
             f"""
-            {self.description}
+            {self.sql.get_description(ctx.guild.id, self.command_name)[0][0]}
             """
+            print(args)
             await ctx.send(self.response)
 
         @custom_command.error
@@ -35,18 +36,41 @@ def main(client, command_name, response):
             if not isinstance(error, commands.errors.CheckFailure):
                 traceback.print_exc()
 
-    client.add_cog(commandTemplate(client, response))
+    client.add_cog(Commandtemplate(client, response))
 
 
-class customCommand(commands.Cog, name='Custom commands'):
+class Customcommand(commands.Cog, name='Custom commands'):
     """
     Custom commands
     """
     def __init__(self, client):
         self.client = client
 
+    @commands.group(aliases=["cc"], no_pm=True)
+    async def customcommand(self, ctx):
+        """Custom command management"""
+        if ctx.invoke_subcommand is None:
+            ctx.send("not how you use command")
+
+    @customcommand.command(name="add")
+    async def cc_add(self, ctx, *, args):
+        """Create custom command"""
+
+    @customcommand.command(name="edit")
+    async def cc_edit(self, ctx, command_name, option, new_value):
+        """Edit custom command"""
+
+    @customcommand.command(name="remove", aliases=["rm"])
+    async def cc_remove(self, ctx, command_name):
+        """Remove custom command"""
+
+    @customcommand.command(name="list", aliases=["ls"])
+    async def cc_list(self, ctx):
+        """Lists all custom commands"""
+
     @commands.command()
     async def ac(self, ctx, command_name, *, response):
+        print(response)
         sql.add_command(ctx.guild.id, command_name)
         main(self.client, command_name, response)
         await ctx.send("work")
@@ -59,4 +83,4 @@ class customCommand(commands.Cog, name='Custom commands'):
 
 
 def setup(client):
-    client.add_cog(customCommand(client))
+    client.add_cog(Customcommand(client))
