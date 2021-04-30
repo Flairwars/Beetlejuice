@@ -2,29 +2,23 @@ from discord.ext import commands
 from decouple import config
 from discord import Intents
 import os
-
-from os import path
 import sys
 
 from sql.prefix import SqlClass
 
 # generate path of colorapp
-colorapp_path = path.abspath("colorapp")
+colorapp_path = os.path.abspath("colorapp")
 
 # add colorapp to include path
 if colorapp_path not in sys.path:
     sys.path.append(colorapp_path)
 
-# add discord bot perms
-intents = Intents.default()
-
 # prefix
 sql = SqlClass()
-
-
 def get_prefix(client, message): return sql.get_prefix(message.guild.id)[0][0]
-
-
+# add discord bot perms
+intents = Intents.default()
+# create the client
 client = commands.Bot(command_prefix=get_prefix, intents=intents)
 
 # loads all cogs
