@@ -3,7 +3,7 @@ import sqlite3
 
 class SqlBaseCommands:
     def __init__(self, tables: list):
-        self.database = 'datatables.db'
+        self.database = 'data/datatables.db'
         # create a database connection
         conn = self.create_connection(self.database)
         # create tables

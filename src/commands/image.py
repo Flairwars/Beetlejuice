@@ -185,8 +185,8 @@ class ImageEditing(commands.Cog, name='image'):
         :return:
         """
         for n in range(beecount):
-            bee = random.choice(listdir('./data'))
-            beeimage = Image.open(f"./data/{bee}")
+            bee = random.choice(listdir('./data/images'))
+            beeimage = Image.open(f"./data/images/{bee}")
             beeimage = beeimage.convert('RGBA')
 
             scale = 0.20 + (random.random() - 0.5) * 0.2
@@ -237,7 +237,7 @@ class ImageEditing(commands.Cog, name='image'):
         await ctx.send(f'`bee`', file=f)
         await bot_msg.delete()
 
-    ''''@beeify.error
+    @beeify.error
     async def _beeify(self, ctx: object, error: object):
         """
         Error output for beeify
@@ -250,7 +250,7 @@ class ImageEditing(commands.Cog, name='image'):
         elif isinstance(error, discord.errors.DiscordException):
             await ctx.send('`ERROR: too many bees`')
         else:
-            await ctx.send(f'`ERROR: {error}`')'''
+            await ctx.send(f'`ERROR: {error}`')
 
     @commands.command(aliases=['avatar'])
     async def pfp(self, ctx, *, member: discord.Member = None):
