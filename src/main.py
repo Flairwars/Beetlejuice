@@ -17,8 +17,6 @@ if colorapp_path not in sys.path:
 
 # add discord bot perms
 intents = Intents.default()
-intents.presences = True
-intents.members = True
 
 # prefix
 sql = SqlClass()
