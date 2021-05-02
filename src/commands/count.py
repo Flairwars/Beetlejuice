@@ -1,10 +1,11 @@
 from discord.ext import commands
 from sql.count import SqlClass
 from praw import Reddit
-from decouple import config
+import os
 from functools import partial
 import requests
 import discord
+
 
 class Count(commands.Cog, name='counting'):
     """
@@ -13,8 +14,8 @@ class Count(commands.Cog, name='counting'):
     def __init__(self, client):
         self.client = client
         self.reddit = Reddit(
-            client_id=config('REDDITID'),
-            client_secret=config('REDDITSECRET'),
+            client_id=os.getenv('REDDITID'),
+            client_secret=os.getenv('REDDITSECRET'),
             user_agent='Yellow Beetlejuice Discord bot'
         )
         self.sql = SqlClass()

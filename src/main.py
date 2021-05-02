@@ -1,8 +1,12 @@
 from discord.ext import commands
-from decouple import config
 from discord import Intents
 import os
 import sys
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("python-dotenv not loaded")
 
 from sql.prefix import SqlClass
 
@@ -62,4 +66,4 @@ async def on_guild_remove(guild):
     sql.remove_guild(guild.id)
 
 
-client.run(config('TOKEN'))
+client.run(os.getenv("TOKEN"))

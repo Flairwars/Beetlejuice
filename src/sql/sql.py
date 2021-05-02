@@ -1,4 +1,12 @@
-import sqlite3
+import os
+externalDB = os.getenv("DATABASE_TYPE")
+if externalDB is not None:
+    try:
+        import pyodbc
+    except ImportError:
+        print("pyodbc not loaded")
+else:
+    import sqlite3
 
 
 class SqlBaseCommands:
@@ -24,9 +32,16 @@ class SqlBaseCommands:
         conn = None
         try:
             # If you are testing and debugging, change which lines are commented out. you will have to do this for each sql file
-            conn = sqlite3.connect(db_file)
-            # conn = pymysql.connect(host=config('SQLIP'), port=int(config('SQLPORT')), user=config('SQLUSER'), password=config('SQLPASS'),
-            #                       database=config('SQLDATA'))
+            if externalDB is None:
+                conn = sqlite3.connect(db_file)
+            else:
+                # TODO: Test this and work out how it should be set up. its scuffed rn
+                conn = pyodbc.connect(f"DRIVER={os.getenv('SQL_DRIVER', '{SQL Server}')};"
+                                      f"SERVER={os.getenv('SQL_SERVER')};"
+                                      f"DATABASE={os.getenv('SQL_DATABASE', 'datatables')};"
+                                      f"UID={os.getenv('SQL_USERNAME')};"
+                                      f"PWD={os.getenv('SQL_PASSWORD')}"
+                                      )
             return conn
         except Exception as e:
             print(e)
